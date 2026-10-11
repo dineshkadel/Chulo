@@ -10,8 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// ConnectDB opens a GORM connection to the project's PostgreSQL database.
-// DATABASE_URL takes precedence; otherwise the connection is built from DB_*.
+// postgresql connection with GORM
 func ConnectDB() (*gorm.DB, error) {
 	dsn, err := databaseDSN()
 	if err != nil {
