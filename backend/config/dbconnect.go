@@ -2,15 +2,17 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"net/url"
 	"os"
 
+	"github.com/dineshkadel/backend/internal/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-// postgresql connection with GORM
+// ConnectDB establishes a connection to PostgreSQL via GORM.
 func ConnectDB() (*gorm.DB, error) {
 	dsn, err := databaseDSN()
 	if err != nil {
@@ -23,6 +25,27 @@ func ConnectDB() (*gorm.DB, error) {
 	}
 
 	return db, nil
+}
+
+// AutoMigrateDB runs GORM auto-migration for all models.
+// Use this in development only — production should use versioned SQL migrations.
+func AutoMigrateDB(db *gorm.DB) error {
+	err := db.AutoMigrate(
+		&models.User{},
+		&models.Address{},
+		&models.Restaurant{},
+		&models.MenuCategory{},
+		&models.MenuItem{},
+		&models.Order{},
+		&models.OrderItem{},
+		&models.Review{},
+		&models.UserInteraction{},
+	)
+	if err != nil {
+		return fmt.Errorf("auto-migrate: %w", err)
+	}
+	log.Println("Database migration completed successfully")
+	return nil
 }
 
 func databaseDSN() (string, error) {
