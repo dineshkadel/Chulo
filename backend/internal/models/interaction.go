@@ -4,6 +4,7 @@ import "time"
 
 type InteractionType string
 
+// features table for the recommendation models
 const (
 	InteractionClick   InteractionType = "click"
 	InteractionOrder   InteractionType = "order"

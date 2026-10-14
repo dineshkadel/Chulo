@@ -27,12 +27,11 @@ func ConnectDB() (*gorm.DB, error) {
 	return db, nil
 }
 
-// AutoMigrateDB runs GORM auto-migration for all models.
-// Use this in development only — production should use versioned SQL migrations.
 func AutoMigrateDB(db *gorm.DB) error {
 	err := db.AutoMigrate(
 		&models.User{},
 		&models.Address{},
+		&models.DeliveryPerson{},
 		&models.Restaurant{},
 		&models.MenuCategory{},
 		&models.MenuItem{},

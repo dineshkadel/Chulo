@@ -40,15 +40,18 @@ type Order struct {
 
 	EstimatedDeliveryMin int `gorm:"type:int" json:"estimated_delivery_min,omitempty"`
 
+	DeliveryPersonID *uint `gorm:"index" json:"delivery_person_id,omitempty"`
+
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// Associations
-	User       User        `gorm:"foreignKey:UserID" json:"-"`
-	Restaurant Restaurant  `gorm:"foreignKey:RestaurantID" json:"-"`
-	Items      []OrderItem `gorm:"foreignKey:OrderID" json:"items,omitempty"`
-	Review     *Review     `gorm:"foreignKey:OrderID" json:"review,omitempty"`
+	User           User            `gorm:"foreignKey:UserID" json:"-"`
+	Restaurant     Restaurant      `gorm:"foreignKey:RestaurantID" json:"-"`
+	DeliveryPerson *DeliveryPerson `gorm:"foreignKey:DeliveryPersonID" json:"delivery_person,omitempty"`
+	Items          []OrderItem     `gorm:"foreignKey:OrderID" json:"items,omitempty"`
+	Review         *Review         `gorm:"foreignKey:OrderID" json:"review,omitempty"`
 }
 
 // OrderItem represents a single line item within an order.
