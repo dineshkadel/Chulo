@@ -8,6 +8,10 @@ import (
 	"time"
 
 	"github.com/dineshkadel/backend/config"
+	"github.com/dineshkadel/backend/internal/handlers"
+	appMiddleware "github.com/dineshkadel/backend/internal/middleware"
+	"github.com/dineshkadel/backend/internal/repository"
+	"github.com/dineshkadel/backend/internal/services"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
@@ -45,6 +49,17 @@ func main() {
 		log.Fatalf("Failed to run database migrations: %v", err)
 	}
 
+	// Dependencies
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "chulo-super-secret-jwt-key-2026-very-secure"
+	}
+
+	userRepo := repository.NewUserRepository(db)
+	authService := services.NewAuthService(userRepo, jwtSecret)
+	authHandler := handlers.NewAuthHandler(authService)
+	authMiddleware := appMiddleware.AuthMiddleware(authService)
+
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -52,7 +67,9 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(30 * time.Second))
+	r.Use(appMiddleware.CORSMiddleware)
 
+	// Base API info & Health
 	r.Get("/api", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, Response{Message: "Welcome to the Chulo API"})
 	})
@@ -71,6 +88,22 @@ func main() {
 		writeJSON(w, http.StatusOK, HealthResponse{
 			Status:   "ok",
 			Database: dbStatus,
+		})
+	})
+
+	r.Route("/api/v1", func(v1 chi.Router) {
+
+		v1.Route("/auth", func(auth chi.Router) {
+			auth.Post("/register", authHandler.Register)
+			auth.Post("/login", authHandler.Login)
+			auth.Post("/refresh", authHandler.RefreshToken)
+		})
+
+		v1.Route("/users", func(users chi.Router) {
+			users.Use(authMiddleware)
+			users.Get("/me", authHandler.GetMe)
+			users.Patch("/me/location", authHandler.UpdateLocation)
+			users.Post("/me/location", authHandler.UpdateLocation)
 		})
 	})
 
