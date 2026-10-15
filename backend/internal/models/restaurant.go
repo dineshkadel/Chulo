@@ -7,9 +7,11 @@ import (
 )
 
 type Restaurant struct {
-	ID          uint   `gorm:"primaryKey" json:"id"`
-	Name        string `gorm:"type:varchar(200);not null;index" json:"name"`
-	Description string `gorm:"type:text" json:"description"`
+	ID           uint   `gorm:"primaryKey" json:"id"`
+	Email        string `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
+	PasswordHash string `gorm:"type:varchar(255);not null" json:"-"`
+	Name         string `gorm:"type:varchar(200);not null;index" json:"name"`
+	Description  string `gorm:"type:text" json:"description"`
 
 	CuisineTypes string `gorm:"type:text[];not null" json:"cuisine_types"`
 
