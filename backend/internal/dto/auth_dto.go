@@ -4,34 +4,34 @@ import "time"
 
 // payload for registering a new user.
 type RegisterRequest struct {
-	DisplayName string `json:"name"`
-	Email       string `json:"email"`
-	Password    string `json:"password"`
-	Phone       string `json:"phone,omitempty"`
+	DisplayName string `json:"name" validate:"required,min=2,max=100"`
+	Email       string `json:"email" validate:"required,email,max=255"`
+	Password    string `json:"password" validate:"required,min=8,max=16"`
+	Phone       string `json:"phone,omitempty" validate:"omitempty,max=20"`
 }
 
 // payload for authenticating an existing user.
 type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
 }
 
 // payload to exchange a refresh token for a new access token.
 type RefreshTokenRequest struct {
-	RefreshToken string `json:"refresh_token"`
+	RefreshToken string `json:"refresh_token" validate:"required"`
 }
 
 // payload for user coordinates provided after login when permission is granted.
 type UpdateLocationRequest struct {
-	Latitude      float64 `json:"latitude"`
-	Longitude     float64 `json:"longitude"`
-	Label         string  `json:"label,omitempty"`
-	City          string  `json:"city,omitempty"`
-	Street        string  `json:"street,omitempty"`
+	Latitude      float64 `json:"latitude" validate:"required,latitude"`
+	Longitude     float64 `json:"longitude" validate:"required,longitude"`
+	Label         string  `json:"label,omitempty" validate:"omitempty,max=50"`
+	City          string  `json:"city,omitempty" validate:"omitempty,max=100"`
+	Street        string  `json:"street,omitempty" validate:"omitempty,max=255"`
 	SaveAsAddress bool    `json:"save_as_address,omitempty"`
 }
 
-// safe user data returned in API responses.
+// represents safe user data returned in API responses.
 type UserResponse struct {
 	ID                uint       `json:"id"`
 	Email             string     `json:"email"`
