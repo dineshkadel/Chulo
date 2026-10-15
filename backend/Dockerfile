@@ -1,4 +1,4 @@
-FROM golang:1.25-alpine AS builder
+FROM golang:alpine AS builder
 WORKDIR /app
 
 # copy go.mod/go.sum first so dependency download is cached

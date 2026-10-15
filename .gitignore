@@ -37,3 +37,9 @@ Backend/architecture.md
 frontend/frontend.md
 backend/architecture.md
 frontend/architecture.md
+backend/rules.md
+frontend/rules.md
+
+
+backend/config/dbconnect_test.go
+

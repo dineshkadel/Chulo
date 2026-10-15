@@ -18,7 +18,6 @@ type Envelope struct {
 	Error *ErrorDetail `json:"error"`
 }
 
-// WriteJSON sends a standard JSON envelope response.
 func WriteJSON(w http.ResponseWriter, status int, data any, meta any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -32,7 +31,6 @@ func WriteJSON(w http.ResponseWriter, status int, data any, meta any) {
 	}
 }
 
-// WriteError sends a standard JSON error envelope response.
 func WriteError(w http.ResponseWriter, status int, code, message, detail string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

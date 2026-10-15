@@ -60,6 +60,11 @@ func main() {
 	authHandler := handlers.NewAuthHandler(authService)
 	authMiddleware := appMiddleware.AuthMiddleware(authService)
 
+	restaurantRepo := repository.NewRestaurantRepository(db)
+	restaurantAuthService := services.NewRestaurantAuthService(restaurantRepo, jwtSecret)
+	restaurantAuthHandler := handlers.NewRestaurantAuthHandler(restaurantAuthService)
+	restaurantAuthMiddleware := appMiddleware.RestaurantAuthMiddleware(restaurantAuthService)
+
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -93,17 +98,32 @@ func main() {
 
 	r.Route("/api/v1", func(v1 chi.Router) {
 
+		// Customer Auth routes
 		v1.Route("/auth", func(auth chi.Router) {
 			auth.Post("/register", authHandler.Register)
 			auth.Post("/login", authHandler.Login)
 			auth.Post("/refresh", authHandler.RefreshToken)
 		})
 
+		// Protected Customer routes
 		v1.Route("/users", func(users chi.Router) {
 			users.Use(authMiddleware)
 			users.Get("/me", authHandler.GetMe)
 			users.Patch("/me/location", authHandler.UpdateLocation)
 			users.Post("/me/location", authHandler.UpdateLocation)
+		})
+
+		// Restaurant Auth & Profile routes
+		v1.Route("/restaurants", func(rest chi.Router) {
+			rest.Post("/auth/register", restaurantAuthHandler.Register)
+			rest.Post("/auth/login", restaurantAuthHandler.Login)
+			rest.Post("/auth/refresh", restaurantAuthHandler.RefreshToken)
+
+			// Protected Restaurant routes
+			rest.Group(func(protected chi.Router) {
+				protected.Use(restaurantAuthMiddleware)
+				protected.Get("/me", restaurantAuthHandler.GetMe)
+			})
 		})
 	})
 
