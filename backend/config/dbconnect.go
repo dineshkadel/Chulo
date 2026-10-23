@@ -32,7 +32,7 @@ func AutoMigrateDB(db *gorm.DB) error {
 		&models.User{},
 		&models.Address{},
 		&models.Restaurant{},
-		&models.MenuCategory{},
+		&models.FoodCategory{},
 		&models.MenuItem{},
 		&models.Order{},
 		&models.DeliveryPerson{},
