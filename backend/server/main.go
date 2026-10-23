@@ -65,6 +65,11 @@ func main() {
 	restaurantAuthHandler := handlers.NewRestaurantAuthHandler(restaurantAuthService)
 	restaurantAuthMiddleware := appMiddleware.RestaurantAuthMiddleware(restaurantAuthService)
 
+	deliveryPersonRepo := repository.NewDeliveryPersonRepository(db)
+	deliveryPersonAuthService := services.NewDeliveryPersonAuthService(deliveryPersonRepo, jwtSecret)
+	deliveryPersonAuthHandler := handlers.NewDeliveryPersonAuthHandler(deliveryPersonAuthService)
+	deliveryPersonAuthMiddleware := appMiddleware.DeliveryPersonAuthMiddleware(deliveryPersonAuthService)
+
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -123,6 +128,17 @@ func main() {
 			rest.Group(func(protected chi.Router) {
 				protected.Use(restaurantAuthMiddleware)
 				protected.Get("/me", restaurantAuthHandler.GetMe)
+			})
+		})
+
+		// Delivery person authentication and profile routes
+		v1.Route("/delivery-persons", func(delivery chi.Router) {
+			delivery.Post("/auth/register", deliveryPersonAuthHandler.Register)
+			delivery.Post("/auth/login", deliveryPersonAuthHandler.Login)
+			delivery.Post("/auth/refresh", deliveryPersonAuthHandler.RefreshToken)
+			delivery.Group(func(protected chi.Router) {
+				protected.Use(deliveryPersonAuthMiddleware)
+				protected.Get("/me", deliveryPersonAuthHandler.GetMe)
 			})
 		})
 	})

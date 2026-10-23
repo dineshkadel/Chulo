@@ -31,11 +31,11 @@ func AutoMigrateDB(db *gorm.DB) error {
 	err := db.AutoMigrate(
 		&models.User{},
 		&models.Address{},
-		&models.DeliveryPerson{},
 		&models.Restaurant{},
 		&models.MenuCategory{},
 		&models.MenuItem{},
 		&models.Order{},
+		&models.DeliveryPerson{},
 		&models.OrderItem{},
 		&models.Review{},
 		&models.UserInteraction{},
