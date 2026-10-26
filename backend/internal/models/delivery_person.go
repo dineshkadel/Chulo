@@ -24,11 +24,7 @@ const (
 
 type DeliveryPerson struct {
 	ID           uint                 `gorm:"primaryKey" json:"id"`
-	FullName     string               `gorm:"type:varchar(150);not null" json:"full_name"`
-	Email        string               `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
-	PasswordHash string               `gorm:"type:varchar(255);not null" json:"-"`
-	Phone        string               `gorm:"type:varchar(20);not null;uniqueIndex" json:"phone"`
-	AvatarURL    string               `gorm:"type:text" json:"avatar_url,omitempty"`
+	UserID       uint                 `gorm:"not null;uniqueIndex" json:"user_id"`
 	Status       DeliveryPersonStatus `gorm:"type:varchar(20);not null;default:'OFFLINE';index" json:"status"`
 	VehicleType  VehicleType          `gorm:"type:varchar(20);not null;default:'SCOOTER'" json:"vehicle_type"`
 	LicensePlate string               `gorm:"type:varchar(30)" json:"license_plate,omitempty"`
@@ -46,5 +42,6 @@ type DeliveryPerson struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 
+	User   User    `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
 	Orders []Order `gorm:"foreignKey:DeliveryPersonID" json:"orders,omitempty"`
 }
