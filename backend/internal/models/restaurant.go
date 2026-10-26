@@ -42,6 +42,7 @@ type Restaurant struct {
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 
+	MenuItems    []MenuItem        `gorm:"foreignKey:RestaurantID" json:"menu_items,omitempty"`
 	Reviews      []Review          `gorm:"foreignKey:RestaurantID" json:"reviews,omitempty"`
 	Orders       []Order           `gorm:"foreignKey:RestaurantID" json:"orders,omitempty"`
 	Interactions []UserInteraction `gorm:"foreignKey:RestaurantID" json:"-"`

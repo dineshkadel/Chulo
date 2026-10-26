@@ -8,8 +8,9 @@ import (
 
 // FoodCategory is a global category shared by menu items across restaurants.
 type FoodCategory struct {
-	ID   uint   `gorm:"primaryKey" json:"id"`
-	Name string `gorm:"type:varchar(100);not null;uniqueIndex" json:"name"`
+	ID    uint   `gorm:"primaryKey" json:"id"`
+	Name  string `gorm:"type:varchar(100);not null;uniqueIndex:idx_food_categories_name_lower,expression:LOWER(name)" json:"name"`
+	Image string `gorm:"type:text" json:"image,omitempty"`
 
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
@@ -21,6 +22,7 @@ type FoodCategory struct {
 // MenuItem represents a single dish associated with one global food category.
 type MenuItem struct {
 	ID             uint    `gorm:"primaryKey" json:"id"`
+	RestaurantID   uint    `gorm:"not null;index" json:"restaurant_id"`
 	FoodCategoryID uint    `gorm:"not null;index" json:"food_category_id"`
 	Name           string  `gorm:"type:varchar(200);not null" json:"name"`
 	Description    string  `gorm:"type:text" json:"description,omitempty"`
@@ -37,4 +39,5 @@ type MenuItem struct {
 
 	// Associations
 	FoodCategory FoodCategory `gorm:"foreignKey:FoodCategoryID" json:"food_category,omitempty"`
+	Restaurant   Restaurant   `gorm:"foreignKey:RestaurantID" json:"-"`
 }
