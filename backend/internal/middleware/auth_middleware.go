@@ -13,8 +13,9 @@ import (
 type contextKey string
 
 const (
-	userIDKey contextKey = "chulo_user_id"
-	emailKey  contextKey = "chulo_user_email"
+	userIDKey   contextKey = "chulo_user_id"
+	emailKey    contextKey = "chulo_user_email"
+	userRoleKey contextKey = "chulo_user_role"
 )
 
 var ErrUserNotInContext = errors.New("user not found in request context")
@@ -36,17 +37,29 @@ func AuthMiddleware(authService services.AuthService) func(http.Handler) http.Ha
 
 			tokenString := parts[1]
 			claims, err := authService.ParseToken(tokenString)
-			if err != nil || claims.TokenType != "access" {
+			if err != nil || claims.TokenType != "access" || claims.UserID == 0 {
 				dto.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Invalid or expired access token", "Please log in again")
 				return
 			}
 
 			ctx := context.WithValue(r.Context(), userIDKey, claims.UserID)
 			ctx = context.WithValue(ctx, emailKey, claims.Email)
+			ctx = context.WithValue(ctx, userRoleKey, claims.Role)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func AdminOnly(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		role, _ := r.Context().Value(userRoleKey).(string)
+		if !strings.EqualFold(role, "admin") {
+			dto.WriteError(w, http.StatusForbidden, "FORBIDDEN", "Admin access required", "")
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // extracts the authenticated user from the context.

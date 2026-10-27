@@ -7,6 +7,7 @@ import (
 
 	"github.com/dineshkadel/backend/internal/dto"
 	"github.com/dineshkadel/backend/internal/middleware"
+	"github.com/dineshkadel/backend/internal/models"
 	"github.com/dineshkadel/backend/internal/services"
 )
 
@@ -87,6 +88,29 @@ func (h *AuthHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dto.WriteJSON(w, http.StatusOK, user, nil)
+}
+
+func (h *AuthHandler) SwitchRole(w http.ResponseWriter, r *http.Request) {
+	userID, err := middleware.GetUserID(r.Context())
+	if err != nil {
+		dto.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Not authenticated", err.Error())
+		return
+	}
+	var req dto.SwitchRoleRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		dto.WriteError(w, http.StatusBadRequest, "MALFORMED_JSON", "Invalid request body", err.Error())
+		return
+	}
+	if err := dto.ValidateStruct(req); err != nil {
+		dto.WriteError(w, http.StatusBadRequest, "VALIDATION_ERROR", err.Error(), "")
+		return
+	}
+	resp, err := h.authService.SwitchRole(r.Context(), userID, models.UserRole(req.Role))
+	if err != nil {
+		handleServiceError(w, err)
+		return
+	}
+	dto.WriteJSON(w, http.StatusOK, resp, nil)
 }
 
 // UpdateLocation records the user's coordinates when they allow site location permissions.

@@ -70,6 +70,10 @@ func main() {
 	deliveryPersonAuthHandler := handlers.NewDeliveryPersonAuthHandler(deliveryPersonAuthService)
 	deliveryPersonAuthMiddleware := appMiddleware.DeliveryPersonAuthMiddleware(deliveryPersonAuthService)
 
+	menuRepo := repository.NewMenuRepository(db)
+	menuService := services.NewMenuService(menuRepo)
+	menuHandler := handlers.NewMenuHandler(menuService)
+
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -78,6 +82,11 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(30 * time.Second))
 	r.Use(appMiddleware.CORSMiddleware)
+	menuImageDir := os.Getenv("MENU_IMAGE_DIR")
+	if menuImageDir == "" {
+		menuImageDir = "uploads/menu-items"
+	}
+	r.Handle("/uploads/menu-items/*", http.StripPrefix("/uploads/menu-items/", http.FileServer(http.Dir(menuImageDir))))
 
 	// Base API info & Health
 	r.Get("/api", func(w http.ResponseWriter, r *http.Request) {
@@ -114,12 +123,15 @@ func main() {
 		v1.Route("/users", func(users chi.Router) {
 			users.Use(authMiddleware)
 			users.Get("/me", authHandler.GetMe)
+			users.Post("/me/role", authHandler.SwitchRole)
 			users.Patch("/me/location", authHandler.UpdateLocation)
 			users.Post("/me/location", authHandler.UpdateLocation)
 		})
 
 		// Restaurant Auth & Profile routes
 		v1.Route("/restaurants", func(rest chi.Router) {
+			rest.Get("/{restaurantID}/menu-items", menuHandler.ListMenuItems)
+			rest.Get("/{restaurantID}/menu-items/{menuItemID}", menuHandler.GetMenuItem)
 			rest.Post("/auth/register", restaurantAuthHandler.Register)
 			rest.Post("/auth/login", restaurantAuthHandler.Login)
 			rest.Post("/auth/refresh", restaurantAuthHandler.RefreshToken)
@@ -128,7 +140,21 @@ func main() {
 			rest.Group(func(protected chi.Router) {
 				protected.Use(restaurantAuthMiddleware)
 				protected.Get("/me", restaurantAuthHandler.GetMe)
+				protected.Post("/food-categories", menuHandler.CreateCategory)
+				protected.Post("/menu-items", menuHandler.CreateMenuItem)
+				protected.Put("/menu-items/{menuItemID}", menuHandler.UpdateMenuItem)
+				protected.Delete("/menu-items/{menuItemID}", menuHandler.DeleteMenuItem)
 			})
+		})
+
+		// Global food categories are public to read and admin-managed to edit.
+		v1.Get("/food-categories", menuHandler.ListCategories)
+		v1.Group(func(admin chi.Router) {
+			admin.Use(authMiddleware)
+			admin.Use(appMiddleware.AdminOnly)
+			admin.Post("/food-categories", menuHandler.CreateCategory)
+			admin.Patch("/food-categories/{categoryID}", menuHandler.UpdateCategory)
+			admin.Delete("/food-categories/{categoryID}", menuHandler.DeleteCategory)
 		})
 
 		// Delivery person authentication and profile routes

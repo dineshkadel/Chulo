@@ -21,6 +21,10 @@ type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token" validate:"required"`
 }
 
+type SwitchRoleRequest struct {
+	Role string `json:"role" validate:"required,oneof=customer admin delivery_person"`
+}
+
 // payload for user coordinates provided after login when permission is granted.
 type UpdateLocationRequest struct {
 	Latitude      float64 `json:"latitude" validate:"required,latitude"`
@@ -36,6 +40,7 @@ type UserResponse struct {
 	ID                uint       `json:"id"`
 	Email             string     `json:"email"`
 	DisplayName       string     `json:"display_name"`
+	Roles             []string   `json:"roles"`
 	AvatarURL         string     `json:"avatar_url,omitempty"`
 	Phone             string     `json:"phone,omitempty"`
 	CurrentLat        *float64   `json:"current_lat,omitempty"`
@@ -47,6 +52,7 @@ type UserResponse struct {
 // result of a successful registration, login, or token refresh.
 type AuthResponse struct {
 	User         UserResponse `json:"user"`
+	ActiveRole   string       `json:"active_role"`
 	AccessToken  string       `json:"access_token"`
 	RefreshToken string       `json:"refresh_token"`
 	TokenType    string       `json:"token_type"`

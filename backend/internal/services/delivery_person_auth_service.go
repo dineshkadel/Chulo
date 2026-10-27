@@ -18,6 +18,7 @@ var ErrDeliveryPersonAlreadyExists = errors.New("delivery person with this email
 
 type DeliveryPersonJWTClaims struct {
 	DeliveryPersonID uint   `json:"delivery_person_id"`
+	UserID           uint   `json:"user_id"`
 	Email            string `json:"email"`
 	Role             string `json:"role"`
 	TokenType        string `json:"token_type"`
@@ -57,11 +58,26 @@ func (s *deliveryPersonAuthService) Register(ctx context.Context, req dto.Delive
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 	person := &models.DeliveryPerson{
-		FullName: strings.TrimSpace(req.FullName), Email: strings.ToLower(strings.TrimSpace(req.Email)),
-		PasswordHash: string(hash), Phone: strings.TrimSpace(req.Phone), VehicleType: vehicle,
+		VehicleType:  vehicle,
 		LicensePlate: strings.TrimSpace(req.LicensePlate), Status: models.DeliveryStatusOffline, IsActive: true,
 	}
-	if err := s.repo.Create(ctx, person); err != nil {
+	email := strings.ToLower(strings.TrimSpace(req.Email))
+	phone := strings.TrimSpace(req.Phone)
+	user, lookupErr := s.repo.GetUserByEmail(ctx, email)
+	if lookupErr == nil {
+		if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)) != nil || (user.Phone != "" && user.Phone != phone) {
+			return nil, ErrDeliveryPersonAlreadyExists
+		}
+	} else if errors.Is(lookupErr, repository.ErrUserNotFound) {
+		user = &models.User{
+			DisplayName: strings.TrimSpace(req.FullName), Email: email,
+			PasswordHash: string(hash), Phone: phone,
+			Roles: []models.UserRole{models.RoleCustomer, models.RoleDeliveryPerson}, Preferences: "{}",
+		}
+	} else {
+		return nil, lookupErr
+	}
+	if err := s.repo.Create(ctx, user, person); err != nil {
 		if errors.Is(err, repository.ErrDeliveryPersonAlreadyExists) {
 			return nil, ErrDeliveryPersonAlreadyExists
 		}
@@ -81,7 +97,7 @@ func (s *deliveryPersonAuthService) Login(ctx context.Context, req dto.DeliveryP
 		}
 		return nil, err
 	}
-	if bcrypt.CompareHashAndPassword([]byte(person.PasswordHash), []byte(req.Password)) != nil || !person.IsActive {
+	if bcrypt.CompareHashAndPassword([]byte(person.User.PasswordHash), []byte(req.Password)) != nil || !person.IsActive {
 		return nil, ErrInvalidCredentials
 	}
 	return s.generateAuthResponse(person)
@@ -141,7 +157,7 @@ func (s *deliveryPersonAuthService) generateAuthResponse(person *models.Delivery
 	now := time.Now().UTC()
 	makeToken := func(tokenType string, expiry time.Duration) (string, error) {
 		claims := DeliveryPersonJWTClaims{
-			DeliveryPersonID: person.ID, Email: person.Email, Role: "delivery_person", TokenType: tokenType,
+			DeliveryPersonID: person.ID, UserID: person.UserID, Email: person.User.Email, Role: string(models.RoleDeliveryPerson), TokenType: tokenType,
 			RegisteredClaims: jwt.RegisteredClaims{Issuer: jwtIssuer, Subject: fmt.Sprintf("delivery_person:%d", person.ID), IssuedAt: jwt.NewNumericDate(now), ExpiresAt: jwt.NewNumericDate(now.Add(expiry))},
 		}
 		return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(s.secret)
@@ -158,5 +174,5 @@ func (s *deliveryPersonAuthService) generateAuthResponse(person *models.Delivery
 }
 
 func toDeliveryPersonResponse(p *models.DeliveryPerson) dto.DeliveryPersonResponse {
-	return dto.DeliveryPersonResponse{ID: p.ID, FullName: p.FullName, Email: p.Email, Phone: p.Phone, AvatarURL: p.AvatarURL, Status: string(p.Status), VehicleType: string(p.VehicleType), LicensePlate: p.LicensePlate, CurrentLat: p.CurrentLat, CurrentLng: p.CurrentLng, AvgRating: p.AvgRating, TotalDeliveries: p.TotalDeliveries, IsVerified: p.IsVerified, IsActive: p.IsActive, CreatedAt: p.CreatedAt}
+	return dto.DeliveryPersonResponse{ID: p.ID, FullName: p.User.DisplayName, Email: p.User.Email, Phone: p.User.Phone, AvatarURL: p.User.AvatarURL, Status: string(p.Status), VehicleType: string(p.VehicleType), LicensePlate: p.LicensePlate, CurrentLat: p.CurrentLat, CurrentLng: p.CurrentLng, AvgRating: p.AvgRating, TotalDeliveries: p.TotalDeliveries, IsVerified: p.IsVerified, IsActive: p.IsActive, CreatedAt: p.CreatedAt}
 }

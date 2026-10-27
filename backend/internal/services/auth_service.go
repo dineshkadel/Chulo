@@ -30,9 +30,11 @@ const (
 )
 
 type JWTClaims struct {
-	UserID    uint   `json:"user_id"`
-	Email     string `json:"email"`
-	TokenType string `json:"token_type"` // "access" or "refresh"
+	UserID           uint   `json:"user_id"`
+	DeliveryPersonID uint   `json:"delivery_person_id,omitempty"`
+	Email            string `json:"email"`
+	Role             string `json:"role"`
+	TokenType        string `json:"token_type"` // "access" or "refresh"
 	jwt.RegisteredClaims
 }
 
@@ -41,6 +43,7 @@ type AuthService interface {
 	Login(ctx context.Context, req dto.LoginRequest) (*dto.AuthResponse, error)
 	RefreshToken(ctx context.Context, req dto.RefreshTokenRequest) (*dto.AuthResponse, error)
 	GetMe(ctx context.Context, userID uint) (*dto.UserResponse, error)
+	SwitchRole(ctx context.Context, userID uint, role models.UserRole) (*dto.AuthResponse, error)
 	UpdateLocation(ctx context.Context, userID uint, req dto.UpdateLocationRequest) (*dto.UserResponse, error)
 	ParseToken(tokenString string) (*JWTClaims, error)
 }
@@ -78,6 +81,7 @@ func (s *authService) Register(ctx context.Context, req dto.RegisterRequest) (*d
 		Email:        email,
 		PasswordHash: string(hash),
 		DisplayName:  name,
+		Roles:        []models.UserRole{models.RoleCustomer},
 		Phone:        strings.TrimSpace(req.Phone),
 		Preferences:  "{}",
 	}
@@ -89,7 +93,7 @@ func (s *authService) Register(ctx context.Context, req dto.RegisterRequest) (*d
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	return s.generateAuthResponse(user)
+	return s.generateAuthResponse(user, models.RoleCustomer)
 }
 
 func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.AuthResponse, error) {
@@ -106,12 +110,19 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Aut
 		}
 		return nil, err
 	}
+	if !user.HasRole(models.RoleCustomer) && !user.HasRole(models.RoleAdmin) {
+		return nil, ErrInvalidCredentials
+	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
 		return nil, ErrInvalidCredentials
 	}
 
-	return s.generateAuthResponse(user)
+	activeRole := models.RoleCustomer
+	if !user.HasRole(activeRole) {
+		activeRole = models.RoleAdmin
+	}
+	return s.generateAuthResponse(user, activeRole)
 }
 
 func (s *authService) RefreshToken(ctx context.Context, req dto.RefreshTokenRequest) (*dto.AuthResponse, error) {
@@ -132,7 +143,28 @@ func (s *authService) RefreshToken(ctx context.Context, req dto.RefreshTokenRequ
 		return nil, err
 	}
 
-	return s.generateAuthResponse(user)
+	activeRole := models.UserRole(claims.Role)
+	if !user.HasRole(activeRole) {
+		return nil, ErrInvalidToken
+	}
+	return s.generateAuthResponse(user, activeRole)
+}
+
+func (s *authService) SwitchRole(ctx context.Context, userID uint, role models.UserRole) (*dto.AuthResponse, error) {
+	user, err := s.repo.GetByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+	if !user.HasRole(role) {
+		return nil, ErrInvalidCredentials
+	}
+	if role == models.RoleDeliveryPerson && user.DeliveryPerson == nil {
+		return nil, ErrInvalidCredentials
+	}
+	return s.generateAuthResponse(user, role)
 }
 
 func (s *authService) GetMe(ctx context.Context, userID uint) (*dto.UserResponse, error) {
@@ -212,13 +244,15 @@ func (s *authService) ParseToken(tokenString string) (*JWTClaims, error) {
 	return claims, nil
 }
 
-func (s *authService) generateAuthResponse(user *models.User) (*dto.AuthResponse, error) {
+func (s *authService) generateAuthResponse(user *models.User, activeRole models.UserRole) (*dto.AuthResponse, error) {
 	now := time.Now().UTC()
 
 	accessClaims := JWTClaims{
-		UserID:    user.ID,
-		Email:     user.Email,
-		TokenType: "access",
+		UserID:           user.ID,
+		DeliveryPersonID: deliveryPersonID(user, activeRole),
+		Email:            user.Email,
+		Role:             string(activeRole),
+		TokenType:        "access",
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    jwtIssuer,
 			Subject:   fmt.Sprintf("%d", user.ID),
@@ -232,9 +266,11 @@ func (s *authService) generateAuthResponse(user *models.User) (*dto.AuthResponse
 	}
 
 	refreshClaims := JWTClaims{
-		UserID:    user.ID,
-		Email:     user.Email,
-		TokenType: "refresh",
+		UserID:           user.ID,
+		DeliveryPersonID: deliveryPersonID(user, activeRole),
+		Email:            user.Email,
+		Role:             string(activeRole),
+		TokenType:        "refresh",
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    jwtIssuer,
 			Subject:   fmt.Sprintf("%d", user.ID),
@@ -249,6 +285,7 @@ func (s *authService) generateAuthResponse(user *models.User) (*dto.AuthResponse
 
 	return &dto.AuthResponse{
 		User:         toUserResponse(user),
+		ActiveRole:   string(activeRole),
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
@@ -257,10 +294,15 @@ func (s *authService) generateAuthResponse(user *models.User) (*dto.AuthResponse
 }
 
 func toUserResponse(user *models.User) dto.UserResponse {
+	roles := make([]string, 0, len(user.Roles))
+	for _, role := range user.Roles {
+		roles = append(roles, string(role))
+	}
 	return dto.UserResponse{
 		ID:                user.ID,
 		Email:             user.Email,
 		DisplayName:       user.DisplayName,
+		Roles:             roles,
 		AvatarURL:         user.AvatarURL,
 		Phone:             user.Phone,
 		CurrentLat:        user.CurrentLat,
@@ -268,4 +310,11 @@ func toUserResponse(user *models.User) dto.UserResponse {
 		LocationUpdatedAt: user.LocationUpdatedAt,
 		CreatedAt:         user.CreatedAt,
 	}
+}
+
+func deliveryPersonID(user *models.User, activeRole models.UserRole) uint {
+	if activeRole == models.RoleDeliveryPerson && user.DeliveryPerson != nil {
+		return user.DeliveryPerson.ID
+	}
+	return 0
 }
