@@ -83,6 +83,45 @@ func (h *RestaurantAuthHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	dto.WriteJSON(w, http.StatusOK, restaurant, nil)
 }
 
+// UpdateProfile replaces the authenticated restaurant's editable profile fields.
+func (h *RestaurantAuthHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
+	restaurantID, err := middleware.GetRestaurantID(r.Context())
+	if err != nil {
+		dto.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Not authenticated", err.Error())
+		return
+	}
+
+	var req dto.RestaurantProfileUpdateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		dto.WriteError(w, http.StatusBadRequest, "MALFORMED_JSON", "Invalid request body", err.Error())
+		return
+	}
+
+	restaurant, err := h.authService.UpdateProfile(r.Context(), restaurantID, req)
+	if err != nil {
+		handleRestaurantError(w, err)
+		return
+	}
+
+	dto.WriteJSON(w, http.StatusOK, restaurant, nil)
+}
+
+// DeleteProfile soft-deletes the authenticated restaurant profile.
+func (h *RestaurantAuthHandler) DeleteProfile(w http.ResponseWriter, r *http.Request) {
+	restaurantID, err := middleware.GetRestaurantID(r.Context())
+	if err != nil {
+		dto.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Not authenticated", err.Error())
+		return
+	}
+
+	if err := h.authService.DeleteProfile(r.Context(), restaurantID); err != nil {
+		handleRestaurantError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func handleRestaurantError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, services.ErrInvalidInput):

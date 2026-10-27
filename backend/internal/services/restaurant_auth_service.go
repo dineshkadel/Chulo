@@ -33,6 +33,8 @@ type RestaurantAuthService interface {
 	Login(ctx context.Context, req dto.RestaurantLoginRequest) (*dto.RestaurantAuthResponse, error)
 	RefreshToken(ctx context.Context, req dto.RefreshTokenRequest) (*dto.RestaurantAuthResponse, error)
 	GetMe(ctx context.Context, restaurantID uint) (*dto.RestaurantResponse, error)
+	UpdateProfile(ctx context.Context, restaurantID uint, req dto.RestaurantProfileUpdateRequest) (*dto.RestaurantResponse, error)
+	DeleteProfile(ctx context.Context, restaurantID uint) error
 	ParseToken(tokenString string) (*RestaurantJWTClaims, error)
 }
 
@@ -148,6 +150,52 @@ func (s *restaurantAuthService) GetMe(ctx context.Context, restaurantID uint) (*
 	return &res, nil
 }
 
+func (s *restaurantAuthService) UpdateProfile(ctx context.Context, restaurantID uint, req dto.RestaurantProfileUpdateRequest) (*dto.RestaurantResponse, error) {
+	if err := dto.ValidateStruct(req); err != nil {
+		return nil, fmt.Errorf("%w: %s", ErrInvalidInput, err.Error())
+	}
+
+	restaurant, err := s.repo.GetByID(ctx, restaurantID)
+	if err != nil {
+		if errors.Is(err, repository.ErrRestaurantNotFound) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	restaurant.Name = strings.TrimSpace(req.Name)
+	restaurant.Description = strings.TrimSpace(req.Description)
+	restaurant.CuisineTypes = formatPostgresArray(req.CuisineTypes)
+	restaurant.PriceTier = req.PriceTier
+	restaurant.Lat = req.Lat
+	restaurant.Lng = req.Lng
+	restaurant.Address = strings.TrimSpace(req.Address)
+	restaurant.Phone = strings.TrimSpace(req.Phone)
+	restaurant.OperatingHours = strings.TrimSpace(req.OperatingHours)
+	if restaurant.OperatingHours == "" {
+		restaurant.OperatingHours = "{}"
+	}
+	restaurant.HeroImageURL = strings.TrimSpace(req.HeroImageURL)
+	restaurant.DietaryTags = formatPostgresArray(req.DietaryTags)
+
+	if err := s.repo.Update(ctx, restaurant); err != nil {
+		return nil, fmt.Errorf("failed to update restaurant profile: %w", err)
+	}
+
+	res := toRestaurantResponse(restaurant)
+	return &res, nil
+}
+
+func (s *restaurantAuthService) DeleteProfile(ctx context.Context, restaurantID uint) error {
+	if err := s.repo.Delete(ctx, restaurantID); err != nil {
+		if errors.Is(err, repository.ErrRestaurantNotFound) {
+			return ErrUserNotFound
+		}
+		return fmt.Errorf("failed to delete restaurant profile: %w", err)
+	}
+	return nil
+}
+
 func (s *restaurantAuthService) ParseToken(tokenString string) (*RestaurantJWTClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &RestaurantJWTClaims{}, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -216,21 +264,23 @@ func (s *restaurantAuthService) generateAuthResponse(restaurant *models.Restaura
 
 func toRestaurantResponse(r *models.Restaurant) dto.RestaurantResponse {
 	return dto.RestaurantResponse{
-		ID:           r.ID,
-		Email:        r.Email,
-		Name:         r.Name,
-		Description:  r.Description,
-		CuisineTypes: r.CuisineTypes,
-		PriceTier:    r.PriceTier,
-		Lat:          r.Lat,
-		Lng:          r.Lng,
-		Address:      r.Address,
-		Phone:        r.Phone,
-		HeroImageURL: r.HeroImageURL,
-		AvgRating:    r.AvgRating,
-		ReviewCount:  r.ReviewCount,
-		IsActive:     r.IsActive,
-		CreatedAt:    r.CreatedAt,
+		ID:             r.ID,
+		Email:          r.Email,
+		Name:           r.Name,
+		Description:    r.Description,
+		CuisineTypes:   r.CuisineTypes,
+		PriceTier:      r.PriceTier,
+		Lat:            r.Lat,
+		Lng:            r.Lng,
+		Address:        r.Address,
+		Phone:          r.Phone,
+		OperatingHours: r.OperatingHours,
+		HeroImageURL:   r.HeroImageURL,
+		DietaryTags:    r.DietaryTags,
+		AvgRating:      r.AvgRating,
+		ReviewCount:    r.ReviewCount,
+		IsActive:       r.IsActive,
+		CreatedAt:      r.CreatedAt,
 	}
 }
 

@@ -19,6 +19,7 @@ type RestaurantRepository interface {
 	GetByID(ctx context.Context, id uint) (*models.Restaurant, error)
 	GetByEmail(ctx context.Context, email string) (*models.Restaurant, error)
 	Update(ctx context.Context, restaurant *models.Restaurant) error
+	Delete(ctx context.Context, id uint) error
 }
 
 type restaurantRepository struct {
@@ -65,4 +66,15 @@ func (r *restaurantRepository) GetByEmail(ctx context.Context, email string) (*m
 
 func (r *restaurantRepository) Update(ctx context.Context, restaurant *models.Restaurant) error {
 	return r.db.WithContext(ctx).Save(restaurant).Error
+}
+
+func (r *restaurantRepository) Delete(ctx context.Context, id uint) error {
+	result := r.db.WithContext(ctx).Delete(&models.Restaurant{}, id)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrRestaurantNotFound
+	}
+	return nil
 }

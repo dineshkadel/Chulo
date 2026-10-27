@@ -39,6 +39,11 @@ func RestaurantAuthMiddleware(authService services.RestaurantAuthService) func(h
 				dto.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Invalid or expired restaurant access token", "Please log in again")
 				return
 			}
+			restaurant, err := authService.GetMe(r.Context(), claims.RestaurantID)
+			if err != nil || !restaurant.IsActive {
+				dto.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Restaurant profile is unavailable", "Please log in again")
+				return
+			}
 
 			ctx := context.WithValue(r.Context(), restaurantIDKey, claims.RestaurantID)
 			ctx = context.WithValue(ctx, restaurantEmailKey, claims.Email)
