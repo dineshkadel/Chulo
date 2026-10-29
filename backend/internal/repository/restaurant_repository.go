@@ -16,6 +16,7 @@ var (
 // defines database operations for restaurants.
 type RestaurantRepository interface {
 	Create(ctx context.Context, restaurant *models.Restaurant) error
+	ListActive(ctx context.Context) ([]models.Restaurant, error)
 	GetByID(ctx context.Context, id uint) (*models.Restaurant, error)
 	GetByEmail(ctx context.Context, email string) (*models.Restaurant, error)
 	Update(ctx context.Context, restaurant *models.Restaurant) error
@@ -40,6 +41,13 @@ func (r *restaurantRepository) Create(ctx context.Context, restaurant *models.Re
 	}
 
 	return r.db.WithContext(ctx).Create(restaurant).Error
+}
+
+// ListActive returns only restaurants that customers can currently browse.
+func (r *restaurantRepository) ListActive(ctx context.Context) ([]models.Restaurant, error) {
+	var restaurants []models.Restaurant
+	err := r.db.WithContext(ctx).Where("is_active = ?", true).Find(&restaurants).Error
+	return restaurants, err
 }
 
 func (r *restaurantRepository) GetByID(ctx context.Context, id uint) (*models.Restaurant, error) {

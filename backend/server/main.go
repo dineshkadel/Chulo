@@ -64,6 +64,8 @@ func main() {
 	restaurantAuthService := services.NewRestaurantAuthService(restaurantRepo, jwtSecret)
 	restaurantAuthHandler := handlers.NewRestaurantAuthHandler(restaurantAuthService)
 	restaurantAuthMiddleware := appMiddleware.RestaurantAuthMiddleware(restaurantAuthService)
+	restaurantBrowseService := services.NewRestaurantBrowseService(restaurantRepo)
+	restaurantBrowseHandler := handlers.NewRestaurantBrowseHandler(restaurantBrowseService)
 
 	deliveryPersonRepo := repository.NewDeliveryPersonRepository(db)
 	deliveryPersonAuthService := services.NewDeliveryPersonAuthService(deliveryPersonRepo, jwtSecret)
@@ -128,6 +130,9 @@ func main() {
 			users.Post("/me/location", authHandler.UpdateLocation)
 		})
 
+		// Public restaurant discovery.
+		v1.Get("/restaurants", restaurantBrowseHandler.List)
+
 		// Restaurant Auth & Profile routes
 		v1.Route("/restaurants", func(rest chi.Router) {
 			rest.Get("/{restaurantID}/menu-items", menuHandler.ListMenuItems)
@@ -140,6 +145,8 @@ func main() {
 			rest.Group(func(protected chi.Router) {
 				protected.Use(restaurantAuthMiddleware)
 				protected.Get("/me", restaurantAuthHandler.GetMe)
+				protected.Put("/me", restaurantAuthHandler.UpdateProfile)
+				protected.Delete("/me", restaurantAuthHandler.DeleteProfile)
 				protected.Post("/food-categories", menuHandler.CreateCategory)
 				protected.Post("/menu-items", menuHandler.CreateMenuItem)
 				protected.Put("/menu-items/{menuItemID}", menuHandler.UpdateMenuItem)

@@ -66,3 +66,24 @@ type RestaurantAuthResponse struct {
 	TokenType    string             `json:"token_type"`
 	ExpiresIn    int64              `json:"expires_in"`
 }
+
+// RestaurantBrowseResponse is the public restaurant representation used by
+// discovery endpoints. It intentionally excludes account-only fields such as email.
+type RestaurantBrowseResponse struct {
+	ID             uint     `json:"id"`
+	Name           string   `json:"name"`
+	Description    string   `json:"description,omitempty"`
+	CuisineTypes   string   `json:"cuisine_types,omitempty"`
+	PriceTier      int      `json:"price_tier"`
+	Lat            float64  `json:"lat"`
+	Lng            float64  `json:"lng"`
+	Address        string   `json:"address,omitempty"`
+	Phone          string   `json:"phone,omitempty"`
+	OperatingHours string   `json:"operating_hours,omitempty"`
+	HeroImageURL   string   `json:"hero_image_url,omitempty"`
+	DietaryTags    string   `json:"dietary_tags,omitempty"`
+	AvgRating      float64  `json:"avg_rating"`
+	ReviewCount    int      `json:"review_count"`
+	IsOpen         bool     `json:"is_open"`
+	DistanceKM     *float64 `json:"distance_km,omitempty"`
+}
