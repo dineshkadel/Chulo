@@ -49,6 +49,13 @@ type UserResponse struct {
 	CreatedAt         time.Time  `json:"created_at"`
 }
 
+// payload for updating customer profile information.
+type UpdateProfileRequest struct {
+	DisplayName string `json:"display_name" validate:"required,min=2,max=100"`
+	Phone       string `json:"phone,omitempty" validate:"omitempty,max=20"`
+	AvatarURL   string `json:"avatar_url,omitempty"`
+}
+
 // result of a successful registration, login, or token refresh for a user.
 type AuthResponse struct {
 	User         UserResponse `json:"user"`

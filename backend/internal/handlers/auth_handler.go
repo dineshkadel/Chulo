@@ -142,6 +142,29 @@ func (h *AuthHandler) UpdateLocation(w http.ResponseWriter, r *http.Request) {
 	dto.WriteJSON(w, http.StatusOK, user, nil)
 }
 
+// UpdateProfile updates the authenticated user's profile information.
+func (h *AuthHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
+	userID, err := middleware.GetUserID(r.Context())
+	if err != nil {
+		dto.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Not authenticated", err.Error())
+		return
+	}
+
+	var req dto.UpdateProfileRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		dto.WriteError(w, http.StatusBadRequest, "MALFORMED_JSON", "Invalid request body", err.Error())
+		return
+	}
+
+	user, err := h.authService.UpdateProfile(r.Context(), userID, req)
+	if err != nil {
+		handleAuthError(w, err)
+		return
+	}
+
+	dto.WriteJSON(w, http.StatusOK, user, nil)
+}
+
 // ─── Delivery Person Auth Handler ──────────────────────────────────────────────
 
 // DeliveryPersonAuthHandler handles HTTP requests for delivery person authentication.

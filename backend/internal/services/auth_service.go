@@ -49,6 +49,7 @@ type AuthService interface {
 	GetMe(ctx context.Context, userID uint) (*dto.UserResponse, error)
 	SwitchRole(ctx context.Context, userID uint, role models.UserRole) (*dto.AuthResponse, error)
 	UpdateLocation(ctx context.Context, userID uint, req dto.UpdateLocationRequest) (*dto.UserResponse, error)
+	UpdateProfile(ctx context.Context, userID uint, req dto.UpdateProfileRequest) (*dto.UserResponse, error)
 	ParseToken(tokenString string) (*JWTClaims, error)
 }
 
@@ -222,6 +223,27 @@ func (s *authService) UpdateLocation(ctx context.Context, userID uint, req dto.U
 			Lng:       req.Longitude,
 			IsDefault: true,
 		})
+	}
+
+	res := toUserResponse(user)
+	return &res, nil
+}
+
+func (s *authService) UpdateProfile(ctx context.Context, userID uint, req dto.UpdateProfileRequest) (*dto.UserResponse, error) {
+	if err := dto.ValidateStruct(req); err != nil {
+		return nil, fmt.Errorf("%w: %s", ErrInvalidInput, err.Error())
+	}
+
+	name := strings.TrimSpace(req.DisplayName)
+	phone := strings.TrimSpace(req.Phone)
+	avatarURL := strings.TrimSpace(req.AvatarURL)
+
+	user, err := s.repo.UpdateProfile(ctx, userID, name, phone, avatarURL)
+	if err != nil {
+		if errors.Is(err, repository.ErrUserNotFound) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
 	}
 
 	res := toUserResponse(user)

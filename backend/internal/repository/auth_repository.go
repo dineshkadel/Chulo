@@ -23,6 +23,7 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id uint) (*models.User, error)
 	GetByEmail(ctx context.Context, email string) (*models.User, error)
 	UpdateLocation(ctx context.Context, id uint, lat, lng float64, updatedAt time.Time) (*models.User, error)
+	UpdateProfile(ctx context.Context, id uint, displayName, phone, avatarURL string) (*models.User, error)
 	CreateAddress(ctx context.Context, addr *models.Address) error
 }
 
@@ -74,6 +75,24 @@ func (r *userRepository) UpdateLocation(ctx context.Context, id uint, lat, lng f
 		"current_lat":         lat,
 		"current_lng":         lng,
 		"location_updated_at": updatedAt,
+	}
+
+	result := r.db.WithContext(ctx).Model(&models.User{}).Where("id = ?", id).Updates(updates)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	if result.RowsAffected == 0 {
+		return nil, ErrUserNotFound
+	}
+
+	return r.GetByID(ctx, id)
+}
+
+func (r *userRepository) UpdateProfile(ctx context.Context, id uint, displayName, phone, avatarURL string) (*models.User, error) {
+	updates := map[string]any{
+		"display_name": displayName,
+		"phone":        phone,
+		"avatar_url":   avatarURL,
 	}
 
 	result := r.db.WithContext(ctx).Model(&models.User{}).Where("id = ?", id).Updates(updates)

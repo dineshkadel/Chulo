@@ -125,6 +125,8 @@ func main() {
 		v1.Route("/users", func(users chi.Router) {
 			users.Use(authMiddleware)
 			users.Get("/me", authHandler.GetMe)
+			users.Put("/me", authHandler.UpdateProfile)
+			users.Patch("/me", authHandler.UpdateProfile)
 			users.Post("/me/role", authHandler.SwitchRole)
 			users.Patch("/me/location", authHandler.UpdateLocation)
 			users.Post("/me/location", authHandler.UpdateLocation)
