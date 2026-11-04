@@ -26,6 +26,20 @@ type RestaurantBrowseFilter struct {
 
 type RestaurantBrowseService interface {
 	List(ctx context.Context, filter RestaurantBrowseFilter) ([]dto.RestaurantBrowseResponse, error)
+	Get(ctx context.Context, id uint) (*dto.RestaurantBrowseResponse, error)
+}
+
+// Get returns one active restaurant for a public restaurant page.
+func (s *restaurantBrowseService) Get(ctx context.Context, id uint) (*dto.RestaurantBrowseResponse, error) {
+	restaurant, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if !restaurant.IsActive {
+		return nil, repository.ErrRestaurantNotFound
+	}
+	response := browseResponse(*restaurant, isRestaurantOpen(restaurant.OperatingHours, s.now()))
+	return &response, nil
 }
 
 type restaurantBrowseService struct {

@@ -6,11 +6,31 @@ import (
 	"strings"
 
 	"github.com/dineshkadel/backend/internal/dto"
+	"github.com/dineshkadel/backend/internal/repository"
 	"github.com/dineshkadel/backend/internal/services"
 )
 
 type RestaurantBrowseHandler struct {
 	service services.RestaurantBrowseService
+}
+
+// Get returns the public details for one active restaurant.
+func (h *RestaurantBrowseHandler) Get(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseUint(r.PathValue("restaurantID"), 10, 64)
+	if err != nil || id == 0 {
+		dto.WriteError(w, http.StatusBadRequest, "VALIDATION_ERROR", "restaurantID must be a positive integer", "")
+		return
+	}
+	restaurant, err := h.service.Get(r.Context(), uint(id))
+	if err != nil {
+		if err == repository.ErrRestaurantNotFound {
+			dto.WriteError(w, http.StatusNotFound, "NOT_FOUND", "Restaurant not found", "")
+			return
+		}
+		dto.WriteError(w, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "Could not load restaurant", err.Error())
+		return
+	}
+	dto.WriteJSON(w, http.StatusOK, restaurant, nil)
 }
 
 func NewRestaurantBrowseHandler(service services.RestaurantBrowseService) *RestaurantBrowseHandler {
