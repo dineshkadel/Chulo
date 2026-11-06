@@ -5,6 +5,7 @@ import { getCategories, getRestaurants } from '../api/restaurants'
 import type { FoodCategory, Restaurant } from '../types/restaurant'
 import { CategoryCard } from '../components/restaurant/CategoryCard'
 import { RestaurantCard } from '../components/restaurant/RestaurantCard'
+import { useLocationContext } from '../contexts/LocationContext'
 
 const serif = { fontFamily: "'Playfair Display', Georgia, serif" }
 
@@ -42,7 +43,7 @@ const steps: { title: string; desc: string; icon: ReactNode }[] = [
 ]
 
 //data loading
-function useHomeData() {
+function useHomeData(latitude: number, longitude: number) {
   const [categories, setCategories] = useState<FoodCategory[]>([])
   const [restaurants, setRestaurants] = useState<Restaurant[]>([])
   const [loading, setLoading] = useState(true)
@@ -50,7 +51,7 @@ function useHomeData() {
 
   useEffect(() => {
     let active = true
-    Promise.all([getCategories(), getRestaurants()])
+    Promise.all([getCategories(), getRestaurants({ lat: latitude, lng: longitude, sortByDistance: true })])
       .then(([categoryData, restaurantData]) => {
         if (active) {
           setCategories(categoryData)
@@ -66,7 +67,7 @@ function useHomeData() {
     return () => {
       active = false
     }
-  }, [])
+  }, [latitude, longitude])
 
   return { categories, restaurants, loading, error }
 }
@@ -94,7 +95,7 @@ function RestaurantSkeleton() {
   )
 }
 
-function Hero() {
+function Hero({ detectLocation }: { detectLocation: () => Promise<unknown> }) {
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-gradient-to-br from-[var(--sand)] via-[hsl(36_60%_94%)] to-[var(--cream)] pt-[72px]">
       <div className="absolute top-[10%] right-[5%] w-[500px] h-[500px] rounded-full bg-[var(--gold)]/10 blur-3xl pointer-events-none" />
@@ -130,7 +131,7 @@ function Hero() {
             </button>
           </form>
 
-          <button className="mt-4 flex items-center gap-2 text-xs font-semibold text-[var(--muted)] hover:text-[var(--red)] transition-colors bg-transparent border-0 cursor-pointer p-0">
+          <button onClick={() => void detectLocation()} className="mt-4 flex items-center gap-2 text-xs font-semibold text-[var(--muted)] hover:text-[var(--red)] transition-colors bg-transparent border-0 cursor-pointer p-0">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
@@ -202,22 +203,22 @@ function CategoriesSection({ categories, loading }: { categories: FoodCategory[]
   )
 }
 
-function RestaurantsSection({ restaurants, loading }: { restaurants: Restaurant[]; loading: boolean }) {
+function RestaurantsSection({ restaurants, loading, navigate }: { restaurants: Restaurant[]; loading: boolean; navigate: (to: Route) => void }) {
   return (
     <section className="py-20 px-6 sm:px-10 max-w-7xl mx-auto" id="restaurants">
       <div className="flex items-end justify-between mb-8 gap-4">
         <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--ink)]" style={serif}>
           Restaurants near you
         </h2>
-        <a href="#" className="text-sm font-bold text-[var(--red)] no-underline hover:underline whitespace-nowrap shrink-0">
+        <button onClick={() => navigate('/restaurant')} className="text-sm font-bold text-[var(--red)] no-underline hover:underline whitespace-nowrap shrink-0 border-0 bg-transparent cursor-pointer">
           See all
-        </a>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading
           ? Array.from({ length: 6 }).map((_, i) => <RestaurantSkeleton key={i} />)
-          : restaurants.map((restaurant) => <RestaurantCard key={restaurant.id} restaurant={restaurant} />)}
+          : restaurants.slice(0, 6).map((restaurant) => <RestaurantCard key={restaurant.id} restaurant={restaurant} />)}
       </div>
     </section>
   )
@@ -266,7 +267,7 @@ function PartnerSection({ navigate }: { navigate: (to: Route) => void }) {
             Reach more customers, manage your orders in one place, and grow your business.
           </p>
           <button
-            onClick={() => navigate('/register')}
+            onClick={() => navigate('/vendor/register')}
             className="bg-white text-[var(--red)] font-bold px-7 py-4 rounded-sm border-0 cursor-pointer hover:-translate-y-0.5 transition-transform shadow-[0_8px_24px_hsl(0_0%_0%/0.2)] text-sm"
           >
             Become a partner
@@ -306,13 +307,14 @@ function AboutSection() {
 
 //main combine homepage
 export function HomePage({ navigate }: { navigate: (to: Route) => void }) {
-  const { categories, restaurants, loading, error } = useHomeData()
+  const { coordinates, detectLocation } = useLocationContext()
+  const { categories, restaurants, loading, error } = useHomeData(coordinates.latitude, coordinates.longitude)
   const [bannerDismissed, setBannerDismissed] = useState(false)
   const hasToken = Boolean(localStorage.getItem('token'))
 
   return (
     <main id="top" className="overflow-x-hidden">
-      <Hero />
+      <Hero detectLocation={detectLocation} />
        {hasToken && !bannerDismissed && <ActiveOrderSection onDismiss={() => setBannerDismissed(true)} />}
       {error && (
         <p className="max-w-7xl mx-auto px-6 py-4 text-red-600 font-semibold text-sm" role="alert">
@@ -321,7 +323,7 @@ export function HomePage({ navigate }: { navigate: (to: Route) => void }) {
       )}
 
       <CategoriesSection categories={categories} loading={loading} />
-      <RestaurantsSection restaurants={restaurants} loading={loading} />
+      <RestaurantsSection restaurants={restaurants} loading={loading} navigate={navigate} />
       <HowItWorksSection />
       <PartnerSection navigate={navigate} />
       <AboutSection />
