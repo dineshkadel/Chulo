@@ -34,6 +34,9 @@ func AutoMigrateDB(db *gorm.DB) error {
 	if err := migrateLegacyDeliveryPersonUsers(db); err != nil {
 		return fmt.Errorf("migrate delivery person accounts: %w", err)
 	}
+	if err := migrateLegacyMenuItemCategory(db); err != nil {
+		return fmt.Errorf("migrate legacy menu item category: %w", err)
+	}
 	err := db.AutoMigrate(
 		&models.User{},
 		&models.Address{},
@@ -43,6 +46,7 @@ func AutoMigrateDB(db *gorm.DB) error {
 		&models.Order{},
 		&models.DeliveryPerson{},
 		&models.OrderItem{},
+		&models.OrderStatusHistory{},
 		&models.Review{},
 		&models.UserInteraction{},
 	)
@@ -104,6 +108,13 @@ func migrateLegacyDeliveryPersonUsers(db *gorm.DB) error {
 		return err
 	}
 	return nil
+}
+
+func migrateLegacyMenuItemCategory(db *gorm.DB) error {
+	if !db.Migrator().HasTable("menu_items") || !db.Migrator().HasColumn("menu_items", "category_id") {
+		return nil
+	}
+	return db.Exec("ALTER TABLE menu_items ALTER COLUMN category_id DROP NOT NULL").Error
 }
 
 func databaseDSN() (string, error) {

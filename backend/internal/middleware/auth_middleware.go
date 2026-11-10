@@ -90,6 +90,12 @@ func GetUserEmail(ctx context.Context) (string, error) {
 	return "", ErrUserNotInContext
 }
 
+// GetUserRole extracts the authenticated user role from the context.
+func GetUserRole(ctx context.Context) string {
+	role, _ := ctx.Value(userRoleKey).(string)
+	return role
+}
+
 // ─── Delivery Person Auth Middleware ───────────────────────────────────────────
 
 // DeliveryPersonAuthMiddleware validates a delivery person Bearer token and injects claims into the request context.

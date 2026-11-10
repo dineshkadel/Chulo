@@ -76,6 +76,10 @@ func main() {
 	menuService := services.NewMenuService(menuRepo)
 	menuHandler := handlers.NewMenuHandler(menuService)
 
+	orderRepo := repository.NewOrderRepository(db)
+	orderService := services.NewOrderService(orderRepo)
+	orderHandler := handlers.NewOrderHandler(orderService)
+
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -132,11 +136,11 @@ func main() {
 			users.Post("/me/location", authHandler.UpdateLocation)
 		})
 
-		// Public restaurant discovery.
-		v1.Get("/restaurants", restaurantBrowseHandler.List)
-
 		// Restaurant Auth & Profile routes
 		v1.Route("/restaurants", func(rest chi.Router) {
+			// Public restaurant discovery.
+			rest.Get("/", restaurantBrowseHandler.List)
+			rest.Get("/{restaurantID}", restaurantBrowseHandler.Get)
 			rest.Get("/{restaurantID}/menu-items", menuHandler.ListMenuItems)
 			rest.Get("/{restaurantID}/menu-items/{menuItemID}", menuHandler.GetMenuItem)
 			rest.Post("/auth/register", restaurantAuthHandler.Register)
@@ -153,6 +157,22 @@ func main() {
 				protected.Post("/menu-items", menuHandler.CreateMenuItem)
 				protected.Put("/menu-items/{menuItemID}", menuHandler.UpdateMenuItem)
 				protected.Delete("/menu-items/{menuItemID}", menuHandler.DeleteMenuItem)
+				protected.Get("/orders", orderHandler.GetRestaurantOrders)
+				protected.Patch("/orders/{id}/status", orderHandler.UpdateRestaurantOrderStatus)
+			})
+		})
+
+		// Customer Orders
+		v1.Route("/orders", func(orders chi.Router) {
+			orders.Post("/quote-fee", orderHandler.QuoteFee)
+
+			orders.Group(func(cust chi.Router) {
+				cust.Use(authMiddleware)
+				cust.Post("/", orderHandler.CreateOrder)
+				cust.Get("/", orderHandler.GetCustomerOrders)
+				cust.Get("/my-orders", orderHandler.GetCustomerOrders)
+				cust.Get("/{id}", orderHandler.GetCustomerOrder)
+				cust.Patch("/{id}/cancel", orderHandler.CancelOrder)
 			})
 		})
 
@@ -164,9 +184,13 @@ func main() {
 			admin.Post("/food-categories", menuHandler.CreateCategory)
 			admin.Patch("/food-categories/{categoryID}", menuHandler.UpdateCategory)
 			admin.Delete("/food-categories/{categoryID}", menuHandler.DeleteCategory)
+			admin.Get("/orders", orderHandler.GetAllOrders)
+			admin.Get("/orders/{id}", orderHandler.GetOrderByID)
+			admin.Patch("/orders/{id}/status", orderHandler.AdminUpdateOrderStatus)
+			admin.Patch("/orders/{id}/assign", orderHandler.AdminAssignDeliveryPerson)
 		})
 
-		// Delivery person authentication and profile routes
+		// Delivery person authentication, profile and order routes
 		v1.Route("/delivery-persons", func(delivery chi.Router) {
 			delivery.Post("/auth/register", deliveryPersonAuthHandler.Register)
 			delivery.Post("/auth/login", deliveryPersonAuthHandler.Login)
@@ -174,6 +198,8 @@ func main() {
 			delivery.Group(func(protected chi.Router) {
 				protected.Use(deliveryPersonAuthMiddleware)
 				protected.Get("/me", deliveryPersonAuthHandler.GetMe)
+				protected.Get("/orders", orderHandler.GetDeliveryOrders)
+				protected.Patch("/orders/{id}/status", orderHandler.UpdateDeliveryOrderStatus)
 			})
 		})
 	})
