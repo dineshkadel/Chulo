@@ -8,16 +8,22 @@ import {
   Phone,
   Pizza,
   Settings,
+  ShoppingBag,
   Soup,
   UserRound,
   UtensilsCrossed,
+  RefreshCw,
+  Eye,
   type LucideIcon,
 } from 'lucide-react'
 import type { Route } from '../App'
 import { useAuth } from '../hooks/useAuth'
 import { useGeolocation } from '../hooks/useGeolocation'
 import { updateProfile, updateLocation } from '../api/user'
-import { formatDate } from '../utils/format'
+import { getMyOrders } from '../api/orders'
+import type { Order } from '../types/order'
+import { OrderTrackerModal, OrderStatusBadge } from '../components/order'
+import { formatDate, formatCurrency } from '../utils/format'
 
 const AVATAR_OPTIONS: { value: string; label: string; icon: LucideIcon }[] = [
   { value: 'momo', label: 'Momo', icon: Soup },
@@ -41,7 +47,32 @@ export function ProfilePage({ navigate }: { navigate: (to: Route) => void }) {
   const { user, isAuthenticated, isLoading, setUser, logout } = useAuth()
   const { detectLocation, loading: geoLoading } = useGeolocation()
 
-  const [activeTab, setActiveTab] = useState<'personal' | 'location' | 'account'>('personal')
+  const [activeTab, setActiveTab] = useState<'personal' | 'location' | 'orders' | 'account'>('personal')
+
+  // Orders state
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loadingOrders, setLoadingOrders] = useState(false)
+  const [ordersError, setOrdersError] = useState<string | null>(null)
+  const [trackingOrderId, setTrackingOrderId] = useState<number | null>(null)
+
+  const fetchMyOrders = async () => {
+    try {
+      setLoadingOrders(true)
+      setOrdersError(null)
+      const data = await getMyOrders()
+      setOrders(data.orders || [])
+    } catch (err: unknown) {
+      setOrdersError(err instanceof Error ? err.message : 'Failed to fetch orders')
+    } finally {
+      setLoadingOrders(false)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === 'orders' && isAuthenticated) {
+      fetchMyOrders()
+    }
+  }, [activeTab, isAuthenticated])
 
   // Personal info state
   const [displayName, setDisplayName] = useState('')
@@ -288,6 +319,18 @@ export function ProfilePage({ navigate }: { navigate: (to: Route) => void }) {
             >
               <MapPin size={16} aria-hidden="true" />
               Delivery Address & Location
+            </button>
+
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`py-3.5 px-4 text-xs sm:text-sm font-bold border-b-2 transition-all whitespace-nowrap cursor-pointer flex items-center gap-2 ${
+                activeTab === 'orders'
+                  ? 'border-[var(--red)] text-[var(--red)] bg-white'
+                  : 'border-transparent text-[var(--muted)] hover:text-[var(--ink)]'
+              }`}
+            >
+              <ShoppingBag size={16} aria-hidden="true" />
+              My Orders & Tracking
             </button>
 
             <button
@@ -651,6 +694,109 @@ export function ProfilePage({ navigate }: { navigate: (to: Route) => void }) {
           </div>
         )}
 
+        {/* TAB: My Orders & Tracking */}
+        {activeTab === 'orders' && (
+          <div className="bg-white rounded-3xl border border-[var(--line)] shadow-sm p-6 sm:p-8 animate-in fade-in space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[var(--line)]">
+              <div>
+                <h2
+                  className="text-xl font-black text-[var(--ink)]"
+                  style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                >
+                  Order History & Live Tracking
+                </h2>
+                <p className="text-xs sm:text-sm text-[var(--muted)] mt-1">
+                  Track live status updates and view past receipts.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={fetchMyOrders}
+                disabled={loadingOrders}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 text-xs font-bold text-stone-700 transition-colors cursor-pointer"
+              >
+                <RefreshCw size={13} className={loadingOrders ? 'animate-spin text-[var(--red)]' : ''} />
+                Refresh
+              </button>
+            </div>
+
+            {ordersError && (
+              <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-2xl text-xs">
+                {ordersError}
+              </div>
+            )}
+
+            {loadingOrders && orders.length === 0 ? (
+              <div className="text-center py-16">
+                <RefreshCw size={28} className="animate-spin text-[var(--red)] mx-auto mb-3" />
+                <p className="text-xs font-bold text-stone-600">Loading your orders...</p>
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="text-center py-16 text-stone-400">
+                <ShoppingBag size={44} className="mx-auto mb-3 opacity-30" />
+                <h4 className="font-bold text-sm text-stone-700">No orders placed yet</h4>
+                <p className="text-xs text-stone-400 mt-1">
+                  Explore top restaurants in Kathmandu and treat yourself today!
+                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate('/restaurant')}
+                  className="mt-4 px-5 py-2.5 rounded-xl bg-[var(--red)] text-white text-xs font-bold hover:bg-[#b83b20] transition-colors"
+                >
+                  Browse Restaurants
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {orders.map((o) => (
+                  <div
+                    key={o.id}
+                    className="p-5 rounded-2xl border border-stone-200 bg-[#fffdfa] hover:shadow-md transition-shadow flex flex-col md:flex-row md:items-center justify-between gap-4"
+                  >
+                    <div className="space-y-1.5 min-w-0">
+                      <div className="flex items-center gap-2.5">
+                        <span className="font-black text-sm text-[var(--red)]">#CH-{o.id}</span>
+                        <OrderStatusBadge status={o.status} />
+                        <span className="text-xs text-stone-400">
+                          {new Date(o.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-base text-stone-900 m-0">
+                        {o.restaurant?.name || `Restaurant #${o.restaurant_id}`}
+                      </h4>
+                      <p className="text-xs text-stone-500 m-0">
+                        📍 {o.delivery_address}
+                      </p>
+                      <p className="text-xs text-stone-600 m-0 pt-1">
+                        {o.items?.map((i) => `${i.quantity}x ${i.name}`).join(', ')}
+                      </p>
+                    </div>
+
+                    <div className="flex md:flex-col items-center md:items-end justify-between shrink-0 gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-stone-100">
+                      <div className="text-right">
+                        <span className="text-[11px] text-stone-400 block">Total</span>
+                        <span className="font-black text-base text-stone-900">
+                          {formatCurrency(o.total)}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setTrackingOrderId(o.id)}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[var(--red)] text-white text-xs font-bold hover:bg-[#b83b20] transition-colors shadow-xs cursor-pointer"
+                      >
+                        <Eye size={14} />
+                        Track & Details
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* TAB 3: Account & Preferences */}
         {activeTab === 'account' && (
           <div className="bg-white rounded-3xl border border-[var(--line)] shadow-sm p-6 sm:p-8 animate-in fade-in space-y-6">
@@ -717,6 +863,14 @@ export function ProfilePage({ navigate }: { navigate: (to: Route) => void }) {
         )}
 
       </div>
+
+      {trackingOrderId && (
+        <OrderTrackerModal
+          orderId={trackingOrderId}
+          onClose={() => setTrackingOrderId(null)}
+          onOrderUpdated={() => fetchMyOrders()}
+        />
+      )}
     </main>
   )
 }
