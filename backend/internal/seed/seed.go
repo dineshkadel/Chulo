@@ -1,4 +1,3 @@
-// Package seed provides repeatable development data for local browsing.
 package seed
 
 import (

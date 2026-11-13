@@ -1,17 +1,31 @@
 import type { OrderStatus } from '../../types/order'
 import { Badge } from '../ui/Badge'
 
-export function OrderStatusBadge({ status }: { status: OrderStatus }) {
-  const variant = {
-    PENDING: 'warning',
-    CONFIRMED: 'info',
-    PREPARING: 'info',
-    READY_FOR_PICKUP: 'warning',
-    OUT_FOR_DELIVERY: 'warning',
-    DELIVERED: 'success',
-    CANCELLED: 'danger',
-  }[status] as 'warning' | 'info' | 'success' | 'danger'
-
-  return <Badge variant={variant}>{status.replace(/_/g, ' ')}</Badge>
+const variantMap: Record<OrderStatus, 'warning' | 'info' | 'success' | 'danger' | 'neutral'> = {
+  PLACED: 'warning',
+  ACCEPTED: 'info',
+  PREPARING: 'info',
+  READY: 'info',
+  ASSIGNED: 'info',
+  PICKED_UP: 'warning',
+  DELIVERED: 'success',
+  REJECTED: 'danger',
+  CANCELLED: 'neutral',
 }
 
+const labels: Record<OrderStatus, string> = {
+  PLACED: 'Order Placed',
+  ACCEPTED: 'Accepted',
+  PREPARING: 'Preparing',
+  READY: 'Ready for Pickup',
+  ASSIGNED: 'Rider Assigned',
+  PICKED_UP: 'Out for Delivery',
+  DELIVERED: 'Delivered',
+  REJECTED: 'Rejected',
+  CANCELLED: 'Cancelled',
+}
+
+export function OrderStatusBadge({ status }: { status: OrderStatus }) {
+  const variant = variantMap[status] ?? 'neutral'
+  return <Badge variant={variant}>{labels[status] || status}</Badge>
+}

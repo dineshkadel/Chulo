@@ -42,4 +42,7 @@ frontend/rules.md
 
 
 backend/config/dbconnect_test.go
+frontendalreadybuilt
 
+backend/cmd
+backend/internal/seed

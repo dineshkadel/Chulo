@@ -18,7 +18,7 @@ const AUTH_SLOGAN = 'Good food, your way.'
 const serif = { fontFamily: "'Playfair Display', Georgia, serif" }
 
 const inputClass =
-  'w-full py-3 bg-white border border-[var(--line)] rounded-xl text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--gold)] focus:ring-2 focus:ring-[var(--gold)]/20 transition-all'
+  'w-full py-3 bg-white border border-(--line) rounded-xl text-sm text-(--ink) focus:outline-none focus:border-(--gold) focus:ring-2 focus:ring-(--gold)/20 transition-all'
 
 // types of mode
 type Mode = 'login' | 'register'
@@ -183,10 +183,10 @@ function useAuthForm({
 function FormHeading({ registering }: { registering: boolean }) {
   return (
     <div className="mb-8">
-      <h1 className="text-3xl font-black text-[var(--ink)] tracking-tight" style={serif}>
+      <h1 className="text-3xl font-black text-(--ink) tracking-tight" style={serif}>
         {registering ? 'Create your account' : 'Welcome back'}
       </h1>
-      <p className="text-sm text-[var(--muted)] mt-1.5">
+      <p className="text-sm text-(--muted) mt-1.5">
         {registering
           ? 'It only takes a minute. You will sign in right after.'
           : 'Enter your email and password to continue.'}
@@ -239,7 +239,7 @@ function InputField({ id, label, icon, labelAside, trailing, ...inputProps }: In
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <label htmlFor={id} className="block text-xs font-bold text-[var(--ink)]">
+        <label htmlFor={id} className="block text-xs font-bold text-(--ink)">
           {label}
         </label>
         {labelAside}
@@ -258,7 +258,7 @@ function SubmitButton({ loading, registering }: { loading: boolean; registering:
     <button
       type="submit"
       disabled={loading}
-      className="w-full py-3.5 px-6 mt-2 rounded-xl bg-[var(--red)] hover:bg-[#b83b20] active:scale-[0.99] text-white font-bold text-sm shadow-md transition-all duration-200 disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
+      className="w-full py-3.5 px-6 mt-2 rounded-xl bg-(--red) hover:bg-[#b83b20] active:scale-[0.99] text-white font-bold text-sm shadow-md transition-all duration-200 disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2"
     >
       {loading ? (
         <>
@@ -277,12 +277,12 @@ function SubmitButton({ loading, registering }: { loading: boolean; registering:
 
 function SwitchModeLink({ registering, onSwitch }: { registering: boolean; onSwitch: () => void }) {
   return (
-    <p className="mt-6 text-center text-xs text-[var(--muted)]">
+    <p className="mt-6 text-center text-xs text-(--muted)">
       {registering ? 'Already have an account?' : 'New to Chulo?'}{' '}
       <button
         type="button"
         onClick={onSwitch}
-        className="font-bold text-[var(--red)] hover:underline bg-transparent border-0 p-0 cursor-pointer"
+        className="font-bold text-(--red) hover:underline bg-transparent border-0 p-0 cursor-pointer"
       >
         {registering ? 'Sign in' : 'Create an account'}
       </button>
@@ -292,12 +292,12 @@ function SwitchModeLink({ registering, onSwitch }: { registering: boolean; onSwi
 
 function RestaurantPrompt() {
   return (
-    <div className="mt-8 p-4 rounded-xl border border-[var(--line)] bg-[var(--sand)]/40 flex items-center justify-between gap-3 text-xs">
+    <div className="mt-8 p-4 rounded-xl border border-(--line) bg-(--sand)/40 flex items-center justify-between gap-3 text-xs">
       <div>
-        <p className="font-bold text-[var(--ink)] m-0">Run a restaurant?</p>
-        <p className="text-[var(--muted)] m-0">Sell to hungry customers near you.</p>
+        <p className="font-bold text-(--ink) m-0">Run a restaurant?</p>
+        <p className="text-(--muted) m-0">Sell to hungry customers near you.</p>
       </div>
-      <a href="#partner" className="shrink-0 font-bold text-[var(--red)] hover:underline">
+      <a href="#partner" className="shrink-0 font-bold text-(--red) hover:underline">
         Partner with us
       </a>
     </div>
@@ -308,7 +308,7 @@ function RestaurantPrompt() {
 
 function ImagePanel() {
   return (
-    <div className="hidden lg:block lg:w-[45%] relative overflow-hidden bg-gradient-to-br from-[var(--red)] to-[hsl(14_75%_30%)]">
+    <div className="hidden lg:block lg:w-[45%] relative overflow-hidden bg-linear-to-br from-(--red) to-[hsl(14_75%_30%)]">
       <img
         src={AUTH_IMAGE}
         alt=""
@@ -317,7 +317,7 @@ function ImagePanel() {
           e.currentTarget.style.display = 'none'
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+      <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/10 to-transparent" />
       <p className="absolute bottom-12 left-12 right-12 text-4xl font-black leading-tight text-white" style={serif}>
         {AUTH_SLOGAN}
       </p>
@@ -344,7 +344,7 @@ function FormPanel({
   }
 
   return (
-    <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-16 py-12 bg-[var(--cream)]">
+    <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-16 py-12 bg-(--cream)">
       <div className="w-full max-w-md mx-auto">
         <FormHeading registering={registering} />
 
@@ -381,7 +381,7 @@ function FormPanel({
                 id="auth-phone"
                 label={
                   <>
-                    Phone <span className="font-normal text-[var(--muted)]">(optional)</span>
+                    Phone <span className="font-normal text-(--muted)">(optional)</span>
                   </>
                 }
                 icon={<Phone size={15} aria-hidden="true" />}
@@ -399,11 +399,11 @@ function FormPanel({
             icon={<ShieldCheck size={15} aria-hidden="true" />}
             labelAside={
               registering ? (
-                <span className="text-[11px] text-[var(--muted)]">Use 8 to 16 characters</span>
+                <span className="text-[11px] text-(--muted)">Use 8 to 16 characters</span>
               ) : (
                 <button
                   type="button"
-                  className="text-xs text-[var(--red)] hover:underline bg-transparent border-0 p-0 cursor-pointer"
+                  className="text-xs text-(--red) hover:underline bg-transparent border-0 p-0 cursor-pointer"
                 >
                   Forgot password
                 </button>
@@ -413,7 +413,7 @@ function FormPanel({
               <button
                 type="button"
                 onClick={toggleShowPassword}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--ink)] bg-transparent border-0 cursor-pointer"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-(--muted) hover:text-(--ink) bg-transparent border-0 cursor-pointer"
               >
                 {showPassword ? (
                   <EyeOff size={16} aria-label="Hide password" />
