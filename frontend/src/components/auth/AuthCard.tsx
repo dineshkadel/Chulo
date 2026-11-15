@@ -147,8 +147,8 @@ function useAuthForm({
 
     login(result.data.access_token, result.data.refresh_token, result.data.user)
 
-    if (onSuccess) onSuccess()
-    else if (navigate) navigate('/')
+    if (onSuccess) onSuccess(result.data.active_role)
+    else if (navigate) navigate(result.data.active_role === 'admin' ? '/admin' : '/')
   }
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
@@ -332,7 +332,7 @@ function FormPanel({
 }: {
   mode: Mode
   navigate?: (to: Route) => void
-  onSuccess?: (registeredEmail?: string) => void
+  onSuccess?: (registeredEmailOrRole?: string) => void
 }) {
   const {
     registering, form,update,showPassword, toggleShowPassword,  loading, errorMessage,  successNotice,submit,

@@ -93,6 +93,11 @@ func main() {
 		menuImageDir = "uploads/menu-items"
 	}
 	r.Handle("/uploads/menu-items/*", http.StripPrefix("/uploads/menu-items/", http.FileServer(http.Dir(menuImageDir))))
+	restaurantImageDir := os.Getenv("RESTAURANT_IMAGE_DIR")
+	if restaurantImageDir == "" {
+		restaurantImageDir = "uploads/restaurants"
+	}
+	r.Handle("/uploads/restaurants/*", http.StripPrefix("/uploads/restaurants/", http.FileServer(http.Dir(restaurantImageDir))))
 
 	// Base API info & Health
 	r.Get("/api", func(w http.ResponseWriter, r *http.Request) {
@@ -152,6 +157,7 @@ func main() {
 				protected.Use(restaurantAuthMiddleware)
 				protected.Get("/me", restaurantAuthHandler.GetMe)
 				protected.Put("/me", restaurantAuthHandler.UpdateProfile)
+				protected.Post("/me/image", restaurantAuthHandler.UploadProfileImage)
 				protected.Delete("/me", restaurantAuthHandler.DeleteProfile)
 				protected.Post("/food-categories", menuHandler.CreateCategory)
 				protected.Post("/menu-items", menuHandler.CreateMenuItem)
