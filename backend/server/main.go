@@ -80,6 +80,10 @@ func main() {
 	orderService := services.NewOrderService(orderRepo)
 	orderHandler := handlers.NewOrderHandler(orderService)
 
+	adminCustomerRepo := repository.NewAdminCustomerRepository(db)
+	adminCustomerService := services.NewAdminCustomerService(adminCustomerRepo)
+	adminCustomerHandler := handlers.NewAdminCustomerHandler(adminCustomerService)
+
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -190,6 +194,25 @@ func main() {
 			admin.Post("/food-categories", menuHandler.CreateCategory)
 			admin.Patch("/food-categories/{categoryID}", menuHandler.UpdateCategory)
 			admin.Delete("/food-categories/{categoryID}", menuHandler.DeleteCategory)
+			admin.Get("/orders", orderHandler.GetAllOrders)
+			admin.Get("/orders/{id}", orderHandler.GetOrderByID)
+			admin.Patch("/orders/{id}/status", orderHandler.AdminUpdateOrderStatus)
+			admin.Patch("/orders/{id}/assign", orderHandler.AdminAssignDeliveryPerson)
+		})
+
+		// Admin management endpoints
+		v1.Route("/admin", func(admin chi.Router) {
+			admin.Use(authMiddleware)
+			admin.Use(appMiddleware.AdminOnly)
+
+			// Customers
+			admin.Get("/customers", adminCustomerHandler.ListCustomers)
+			admin.Get("/customers/{id}", adminCustomerHandler.GetCustomer)
+			admin.Patch("/customers/{id}/status", adminCustomerHandler.UpdateCustomerStatus)
+			admin.Patch("/customers/{id}/role", adminCustomerHandler.UpdateCustomerRole)
+			admin.Delete("/customers/{id}", adminCustomerHandler.DeleteCustomer)
+
+			// Orders
 			admin.Get("/orders", orderHandler.GetAllOrders)
 			admin.Get("/orders/{id}", orderHandler.GetOrderByID)
 			admin.Patch("/orders/{id}/status", orderHandler.AdminUpdateOrderStatus)

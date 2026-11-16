@@ -124,7 +124,7 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Aut
 	}
 
 	activeRole := models.RoleCustomer
-	if !user.HasRole(activeRole) {
+	if user.HasRole(models.RoleAdmin) {
 		activeRole = models.RoleAdmin
 	}
 	return s.generateAuthResponse(user, activeRole)
@@ -334,6 +334,7 @@ func toUserResponse(user *models.User) dto.UserResponse {
 		CurrentLat:        user.CurrentLat,
 		CurrentLng:        user.CurrentLng,
 		LocationUpdatedAt: user.LocationUpdatedAt,
+		IsActive:          user.IsActive,
 		CreatedAt:         user.CreatedAt,
 	}
 }

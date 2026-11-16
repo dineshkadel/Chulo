@@ -106,6 +106,45 @@ func (h *RestaurantAuthHandler) UpdateProfile(w http.ResponseWriter, r *http.Req
 	dto.WriteJSON(w, http.StatusOK, restaurant, nil)
 }
 
+// UploadProfileImage saves a restaurant-owned image and stores its public URL
+// on the profile. Keeping this as a small separate endpoint lets normal
+// profile updates remain JSON requests.
+func (h *RestaurantAuthHandler) UploadProfileImage(w http.ResponseWriter, r *http.Request) {
+	restaurantID, err := middleware.GetRestaurantID(r.Context())
+	if err != nil {
+		dto.WriteError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Not authenticated", err.Error())
+		return
+	}
+
+	imageURL, _, err := middleware.UploadRestaurantImage(r)
+	if err != nil {
+		middleware.WriteImageUploadError(w, err)
+		return
+	}
+	if imageURL == "" {
+		dto.WriteError(w, http.StatusBadRequest, "INVALID_IMAGE", "Choose an image to upload", "")
+		return
+	}
+
+	profile, err := h.authService.GetMe(r.Context(), restaurantID)
+	if err != nil {
+		handleRestaurantError(w, err)
+		return
+	}
+	profile.HeroImageURL = imageURL
+	updated, err := h.authService.UpdateProfile(r.Context(), restaurantID, dto.RestaurantProfileUpdateRequest{
+		Name: profile.Name, Description: profile.Description, CuisineTypes: profile.CuisineTypes,
+		PriceTier: profile.PriceTier, Lat: profile.Lat, Lng: profile.Lng, Address: profile.Address,
+		Phone: profile.Phone, OperatingHours: profile.OperatingHours, HeroImageURL: imageURL,
+		DietaryTags: profile.DietaryTags,
+	})
+	if err != nil {
+		handleRestaurantError(w, err)
+		return
+	}
+	dto.WriteJSON(w, http.StatusOK, updated, nil)
+}
+
 // DeleteProfile soft-deletes the authenticated restaurant profile.
 func (h *RestaurantAuthHandler) DeleteProfile(w http.ResponseWriter, r *http.Request) {
 	restaurantID, err := middleware.GetRestaurantID(r.Context())

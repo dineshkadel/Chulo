@@ -51,9 +51,22 @@ func AuthMiddleware(authService services.AuthService) func(http.Handler) http.Ha
 				return
 			}
 
+			activeRole := claims.Role
+			// If not active admin, check if user has admin role assigned in profile
+			if !strings.EqualFold(activeRole, "admin") {
+				if userResp, err := authService.GetMe(r.Context(), claims.UserID); err == nil {
+					for _, rName := range userResp.Roles {
+						if strings.EqualFold(rName, "admin") {
+							activeRole = "admin"
+							break
+						}
+					}
+				}
+			}
+
 			ctx := context.WithValue(r.Context(), userIDKey, claims.UserID)
 			ctx = context.WithValue(ctx, emailKey, claims.Email)
-			ctx = context.WithValue(ctx, userRoleKey, claims.Role)
+			ctx = context.WithValue(ctx, userRoleKey, activeRole)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

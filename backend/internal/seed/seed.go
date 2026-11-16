@@ -5,8 +5,15 @@ import (
 	"strings"
 
 	"github.com/dineshkadel/backend/internal/models"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+)
+
+const (
+	adminSeedEmail      = "admin@gmail.com"
+	adminSeedPassword   = "password123"
+	adminSeedBcryptCost = 12
 )
 
 type restaurantSeed struct {
@@ -58,8 +65,38 @@ func DevelopmentData(db *gorm.DB) error {
 				return err
 			}
 		}
-		return nil
+		return seedAdmin(tx)
 	})
+}
+
+func seedAdmin(tx *gorm.DB) error {
+	admin, err := newAdminSeedUser()
+	if err != nil {
+		return err
+	}
+
+	if err := tx.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "email"}},
+		DoNothing: true,
+	}).Create(admin).Error; err != nil {
+		return fmt.Errorf("seed admin user: %w", err)
+	}
+	return nil
+}
+
+func newAdminSeedUser() (*models.User, error) {
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(adminSeedPassword), adminSeedBcryptCost)
+	if err != nil {
+		return nil, fmt.Errorf("hash seeded admin password: %w", err)
+	}
+
+	return &models.User{
+		Email:        adminSeedEmail,
+		PasswordHash: string(passwordHash),
+		DisplayName:  "admin",
+		Roles:        []models.UserRole{models.RoleAdmin},
+		Preferences:  "{}",
+	}, nil
 }
 
 func seedMenu(tx *gorm.DB, restaurantID uint, categories map[string]uint, index int) error {

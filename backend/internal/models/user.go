@@ -27,6 +27,7 @@ type User struct {
 	CurrentLat        *float64   `gorm:"type:double precision" json:"current_lat,omitempty"`
 	CurrentLng        *float64   `gorm:"type:double precision" json:"current_lng,omitempty"`
 	LocationUpdatedAt *time.Time `json:"location_updated_at,omitempty"`
+	IsActive          bool       `gorm:"default:true;not null" json:"is_active"`
 
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`

@@ -26,6 +26,16 @@ func (e *ImageUploadError) Error() string { return e.Err.Error() }
 
 // UploadMenuItemImage stores an optional multipart field named "image" and
 func UploadMenuItemImage(r *http.Request) (string, string, error) {
+	return uploadImage(r, "MENU_IMAGE_DIR", filepath.Join("uploads", "menu-items"), "/uploads/menu-items/")
+}
+
+// UploadRestaurantImage stores the restaurant profile image supplied in the
+// multipart field named "image".
+func UploadRestaurantImage(r *http.Request) (string, string, error) {
+	return uploadImage(r, "RESTAURANT_IMAGE_DIR", filepath.Join("uploads", "restaurants"), "/uploads/restaurants/")
+}
+
+func uploadImage(r *http.Request, directoryEnv, defaultDirectory, urlPrefix string) (string, string, error) {
 	file, header, err := r.FormFile("image")
 	if errors.Is(err, http.ErrMissingFile) {
 		return "", "", nil
@@ -52,9 +62,9 @@ func UploadMenuItemImage(r *http.Request) (string, string, error) {
 		return "", "", &ImageUploadError{StatusCode: http.StatusBadRequest, Code: "INVALID_IMAGE", Message: "Only JPEG, PNG, and WebP images are allowed", Err: errors.New("unsupported image content type")}
 	}
 
-	uploadDir := os.Getenv("MENU_IMAGE_DIR")
+	uploadDir := os.Getenv(directoryEnv)
 	if uploadDir == "" {
-		uploadDir = filepath.Join("uploads", "menu-items")
+		uploadDir = defaultDirectory
 	}
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
 		return "", "", &ImageUploadError{StatusCode: http.StatusInternalServerError, Code: "UPLOAD_FAILED", Message: "Could not store image", Err: err}
@@ -68,7 +78,7 @@ func UploadMenuItemImage(r *http.Request) (string, string, error) {
 	if err := os.WriteFile(imagePath, data, 0644); err != nil {
 		return "", "", &ImageUploadError{StatusCode: http.StatusInternalServerError, Code: "UPLOAD_FAILED", Message: "Could not store image", Err: err}
 	}
-	return "/uploads/menu-items/" + filename, imagePath, nil
+	return urlPrefix + filename, imagePath, nil
 }
 
 func WriteImageUploadError(w http.ResponseWriter, err error) {
