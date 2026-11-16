@@ -1,11 +1,7 @@
-/**
- * Restaurant-authenticated API layer.
- * All calls send: Authorization: Bearer <restaurant_access_token>
- */
+
 
 import type { MenuItem } from '../types/restaurant'
 
-// ─── helpers ────────────────────────────────────────────────────────────────
 
 function getToken(): string {
   return localStorage.getItem('restaurant_access_token') ?? ''
@@ -29,6 +25,22 @@ function authHeaders(): HeadersInit {
   }
 }
 
+function multipartAuthHeaders(): HeadersInit {
+  return { Authorization: `Bearer ${getToken()}` }
+}
+
+function menuItemFormData(payload: Partial<MenuItemPayload>, image?: File | null): FormData {
+  const form = new FormData()
+  if (payload.food_category_id !== undefined) form.append('food_category_id', String(payload.food_category_id))
+  if (payload.name !== undefined) form.append('name', payload.name)
+  if (payload.description !== undefined) form.append('description', payload.description)
+  if (payload.price !== undefined) form.append('price', String(payload.price))
+  if (payload.dietary_tags !== undefined) form.append('dietary_tags', payload.dietary_tags)
+  if (payload.is_available !== undefined) form.append('is_available', String(payload.is_available))
+  if (image) form.append('image', image)
+  return form
+}
+
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let message = `Request failed: ${res.status}`
@@ -43,7 +55,6 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>
 }
 
-// ─── Restaurant profile ─────────────────────────────────────────────────────
 
 export interface RestaurantProfile {
   id: number
@@ -97,7 +108,17 @@ export async function updateRestaurantMe(
   return handleResponse<RestaurantProfile>(res)
 }
 
-// ─── Menu items ─────────────────────────────────────────────────────────────
+export async function uploadRestaurantProfileImage(image: File): Promise<RestaurantProfile> {
+  const form = new FormData()
+  form.append('image', image)
+  const res = await fetch('/api/v1/restaurants/me/image', {
+    method: 'POST',
+    headers: multipartAuthHeaders(),
+    body: form,
+  })
+  return handleResponse<RestaurantProfile>(res)
+}
+
 
 export interface MenuItemPayload {
   food_category_id: number
@@ -116,11 +137,11 @@ export async function getMyMenuItems(): Promise<MenuItem[]> {
   return handleResponse<MenuItem[]>(res)
 }
 
-export async function createMenuItem(payload: MenuItemPayload): Promise<MenuItem> {
+export async function createMenuItem(payload: MenuItemPayload, image?: File | null): Promise<MenuItem> {
   const res = await fetch('/api/v1/restaurants/menu-items', {
     method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
+    headers: multipartAuthHeaders(),
+    body: menuItemFormData(payload, image),
   })
   return handleResponse<MenuItem>(res)
 }
@@ -128,11 +149,12 @@ export async function createMenuItem(payload: MenuItemPayload): Promise<MenuItem
 export async function updateMenuItem(
   id: number,
   payload: Partial<MenuItemPayload>,
+  image?: File | null,
 ): Promise<MenuItem> {
   const res = await fetch(`/api/v1/restaurants/menu-items/${id}`, {
     method: 'PUT',
-    headers: authHeaders(),
-    body: JSON.stringify(payload),
+    headers: multipartAuthHeaders(),
+    body: menuItemFormData(payload, image),
   })
   return handleResponse<MenuItem>(res)
 }
@@ -154,7 +176,6 @@ export async function toggleMenuItemAvailability(
   return updateMenuItem(id, { is_available: isAvailable })
 }
 
-// ─── Food categories ─────────────────────────────────────────────────────────
 
 export interface FoodCategory {
   id: number
@@ -169,11 +190,11 @@ export async function getMyFoodCategories(): Promise<FoodCategory[]> {
   return handleResponse<FoodCategory[]>(res)
 }
 
-export async function createFoodCategory(name: string): Promise<FoodCategory> {
+export async function createFoodCategory(name: string, image?: string): Promise<FoodCategory> {
   const res = await fetch('/api/v1/restaurants/food-categories', {
     method: 'POST',
     headers: authHeaders(),
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, image: image || undefined }),
   })
   return handleResponse<FoodCategory>(res)
 }
