@@ -1,0 +1,6 @@
+import { MessageSquareText, Star } from 'lucide-react'
+import type { RestaurantProfile } from '../../api/restaurantApi'
+export function RestaurantReviews({ profile }: { profile: RestaurantProfile | null }) {
+  const rating = profile?.avg_rating ?? 0; const count = profile?.review_count ?? 0
+  return <div><p className="m-0 text-xs font-bold uppercase tracking-[.16em] text-(--red)">Customer feedback</p><h1 className="mt-2 font-[family-name:var(--display)] text-4xl">Reviews</h1><div className="mt-7 grid gap-4 sm:grid-cols-[220px_1fr]"><section className="rounded-2xl bg-(--red) p-6 text-white"><p className="m-0 text-sm text-orange-100">Average rating</p><strong className="mt-2 block text-5xl">{rating ? rating.toFixed(1) : '—'}</strong><div className="mt-2 flex gap-1">{Array.from({ length: 5 }).map((_, index) => <Star key={index} size={17} fill={index < Math.round(rating) ? 'currentColor' : 'none'} />)}</div><p className="mb-0 mt-4 text-sm text-orange-100">{count} review{count === 1 ? '' : 's'}</p></section><section className="flex flex-col items-center justify-center rounded-2xl border border-[#eadfd2] bg-white p-8 text-center"><MessageSquareText size={40} className="text-stone-300" /><h2 className="mb-0 mt-3 text-lg">Customer feedback</h2><p className="mb-0 text-sm text-stone-500">Your live rating and review count are shown here.</p></section></div></div>
+}
