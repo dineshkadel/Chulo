@@ -1,4 +1,5 @@
-export { AdminSidebar, type AdminTab, ADMIN_NAV_ITEMS } from './AdminSidebar'
+export { AdminSidebar, type AdminTab } from './AdminSidebar'
+export { ADMIN_NAV_ITEMS } from './adminNavItems'
 export { AdminHeader } from './AdminHeader'
 export { AdminOverviewTab } from './tabs/AdminOverviewTab'
 export { AdminCustomersTab } from './tabs/AdminCustomersTab'
