@@ -1,3 +1,1 @@
-// Admin pages (Dashboard, UserManagement, OrderModeration, etc.)
-export {}
-
+export { AdminDashboardPage } from './AdminDashboardPage'
