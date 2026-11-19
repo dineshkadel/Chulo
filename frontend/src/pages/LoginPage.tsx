@@ -6,7 +6,7 @@ export function LoginPage({ navigate }: { navigate: (to: Route) => void }) {
     <AuthCard
       mode="login"
       navigate={navigate}
-      onSuccess={() => navigate('/')}
+      onSuccess={(activeRole) => navigate(activeRole === 'admin' ? '/admin' : '/')}
     />
   )
 }
