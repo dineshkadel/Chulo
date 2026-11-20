@@ -11,7 +11,7 @@ import { CartDrawer } from '../cart/CartDrawer'
 const serif = { fontFamily: "'Playfair Display', Georgia, serif" }
 
 const NAV_LINKS = [
-  { label: 'Explore', href: '#explore' },
+  { label: 'Explore', href: '/explore' },
   { label: 'Restaurants', href: '/restaurant' },
   { label: 'About', href: '#story' },
   { label: 'Contact', href: '#contact' },
@@ -155,12 +155,14 @@ function ProfileMenu({
   user,
   totalItems,
   onProfile,
+  onAdmin,
   onOpenCart,
   onLogout,
 }: {
   user: User
   totalItems: number
   onProfile: () => void
+  onAdmin?: () => void
   onOpenCart: () => void
   onLogout: () => void
 }) {
@@ -219,6 +221,15 @@ function ProfileMenu({
           </div>
 
           <div className="py-1">
+            {user.roles?.includes('admin') && onAdmin && (
+              <button type="button" onClick={run(onAdmin)} className={`${menuItemClass} text-[var(--red)] font-bold`}>
+                <MenuIcon>
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </MenuIcon>
+                Admin Control Center
+              </button>
+            )}
+
             <button type="button" onClick={run(onProfile)} className={menuItemClass}>
               <MenuIcon>
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -325,6 +336,15 @@ function MobileMenu({
       <div className="pt-2 flex flex-col gap-2">
         {user ? (
           <>
+            {user.roles?.includes('admin') && (
+              <button
+                type="button"
+                onClick={() => onGo('/admin')}
+                className={`${mobileButtonClass} bg-[var(--red)]/10 text-[var(--red)] border-[var(--red)]/30 font-bold`}
+              >
+                <UserRound size={16} aria-hidden="true" /> Admin Control Center
+              </button>
+            )}
             <button type="button" onClick={() => onGo('/profile')} className={mobileButtonClass}>
               <UserRound size={16} aria-hidden="true" /> Customer Profile
             </button>
@@ -414,6 +434,7 @@ export function Navbar({ navigate, compact }: { navigate: (to: Route) => void; c
                 user={signedInUser}
                 totalItems={totalItems}
                 onProfile={() => go('/profile')}
+                onAdmin={() => go('/admin')}
                 onOpenCart={openCart}
                 onLogout={handleLogout}
               />

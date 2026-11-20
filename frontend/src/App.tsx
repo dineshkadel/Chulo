@@ -7,15 +7,18 @@ import { ProfilePage } from './pages/ProfilePage'
 import { RestaurantListPage } from './pages/RestaurantListPage'
 import { RestaurantDetailPage } from './pages/RestaurantDetailPage'
 import { MenuItemDetailPage } from './pages/MenuItemDetailPage'
+import { ExplorePage } from './pages/ExplorePage'
+import { AdminDashboardPage } from './pages/admin/AdminDashboardPage'
 import { RestaurantAuthPage, RestaurantDashboardPage } from './pages/restaurant'
 import { AuthProvider, CartProvider, LocationProvider, ThemeProvider } from './contexts'
 import { useAuth } from './hooks/useAuth'
 import './App.css'
 
-export type Route = '/' | '/login' | '/register' | '/profile' | '/restaurant' | `/restaurant/${number}` | `/restaurant/${number}/menu/${number}` | '/vendor/login' | '/vendor/register' | '/vendor/dashboard'
+export type Route = '/' | '/explore' | '/login' | '/register' | '/profile' | '/admin' | '/restaurant' | `/restaurant/${number}` | `/restaurant/${number}/menu/${number}` | '/vendor/login' | '/vendor/register' | '/vendor/dashboard' | '/vendor/orders' | '/vendor/menu' | '/vendor/reviews' | '/vendor/settings'
 const routeFor = (path: string): Route =>
   path === '/login' || path === '/register' || path === '/profile' ||
-  path === '/restaurant' || path === '/vendor/login' || path === '/vendor/register' || path === '/vendor/dashboard'
+  path === '/explore' || path === '/restaurant' || path === '/admin' || path === '/vendor/login' || path === '/vendor/register' ||
+  path === '/vendor/dashboard' || path === '/vendor/orders' || path === '/vendor/menu' || path === '/vendor/reviews' || path === '/vendor/settings'
     ? path
     : /^\/restaurant\/\d+(?:\/menu\/\d+)?$/.test(path) ? path as Route : '/'
 
@@ -35,7 +38,7 @@ export default function App() {
 
 function AppRoutes() {
   const [route, setRoute] = useState<Route>(() => routeFor(window.location.pathname))
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, user } = useAuth()
 
   useEffect(() => {
     const pop = () => setRoute(routeFor(window.location.pathname))
@@ -50,28 +53,30 @@ function AppRoutes() {
   }
 
   const authPage = route === '/login' || route === '/register'
-  const vendorPortalPage = route.startsWith('/vendor/')
   const menuMatch = route.match(/^\/restaurant\/(\d+)\/menu\/(\d+)$/)
   const restaurantMatch = route.match(/^\/restaurant\/(\d+)$/)
 
   useEffect(() => {
     if (authPage && !isLoading && isAuthenticated) {
-      navigate('/', true)
+      navigate(user?.roles.includes('admin') ? '/admin' : '/', true)
     }
-  }, [authPage, isAuthenticated, isLoading])
+  }, [authPage, isAuthenticated, isLoading, user])
 
   if (authPage && (isLoading || isAuthenticated)) return null
 
-  if (vendorPortalPage) {
-    if (route === '/vendor/register') return <RestaurantAuthPage mode="register" navigate={navigate} />
-    if (route === '/vendor/login') return <RestaurantAuthPage mode="login" navigate={navigate} />
-    return <RestaurantDashboardPage navigate={navigate} />
-  }
+  if (route === '/vendor/register') return <RestaurantAuthPage mode="register" navigate={navigate} />
+  if (route === '/vendor/login') return <RestaurantAuthPage mode="login" navigate={navigate} />
+  if (
+    route === '/vendor/dashboard' || route === '/vendor/orders' || route === '/vendor/menu' ||
+    route === '/vendor/reviews' || route === '/vendor/settings'
+  ) return <RestaurantDashboardPage route={route} navigate={navigate} />
+  if (route === '/admin') return <AdminDashboardPage navigate={navigate} />
 
   return (
     <div className="app-shell">
       <Navbar navigate={navigate} compact={authPage} />
       {route === '/' && <HomePage navigate={navigate} />}
+      {route === '/explore' && <ExplorePage />}
       {route === '/restaurant' && <RestaurantListPage navigate={navigate} />}
       {restaurantMatch && <RestaurantDetailPage restaurantId={Number(restaurantMatch[1])} />}
       {menuMatch && <MenuItemDetailPage restaurantId={Number(menuMatch[1])} menuItemId={Number(menuMatch[2])} />}

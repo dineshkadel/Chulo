@@ -41,7 +41,7 @@ const TAB_DESCRIPTIONS: Record<AdminTab, { title: string; subtitle: string }> = 
   },
   setting: {
     title: 'System & Platform Settings',
-    subtitle: 'Configure fee structures, Haversine dispatch radius, and operational toggles.',
+    subtitle: 'Configure fee structures, dispatch radius, and operational toggles.',
   },
 }
 

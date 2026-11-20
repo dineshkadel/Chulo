@@ -11,6 +11,7 @@ export interface MenuItem {
   description?: string
   price: number
   image_url?: string
+  food_category_id?: number
   category_id?: number
   is_available: boolean
 }

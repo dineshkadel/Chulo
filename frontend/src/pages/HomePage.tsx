@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react'
-import { Bike, MapPin, Soup, Store } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { Bike, ChevronLeft, ChevronRight, MapPin, Soup, Store } from 'lucide-react'
 import type { Route } from '../App'
 import { getCategories, getRestaurants } from '../api/restaurants'
 import type { FoodCategory, Restaurant } from '../types/restaurant'
@@ -9,7 +9,7 @@ import { useLocationContext } from '../contexts/LocationContext'
 
 const serif = { fontFamily: "'Playfair Display', Georgia, serif" }
 
-// data 
+// data
 const steps: { title: string; desc: string; icon: ReactNode }[] = [
   {
     title: 'Choose your food',
@@ -42,7 +42,7 @@ const steps: { title: string; desc: string; icon: ReactNode }[] = [
   },
 ]
 
-//data loading
+// data loading
 function useHomeData(latitude: number, longitude: number) {
   const [categories, setCategories] = useState<FoodCategory[]>([])
   const [restaurants, setRestaurants] = useState<Restaurant[]>([])
@@ -72,7 +72,7 @@ function useHomeData(latitude: number, longitude: number) {
   return { categories, restaurants, loading, error }
 }
 
-// section of homepage 
+// skeletons
 function CategorySkeleton() {
   return (
     <div className="flex flex-col items-center gap-3 p-5 rounded-2xl border border-[var(--line)] bg-white animate-pulse">
@@ -95,6 +95,7 @@ function RestaurantSkeleton() {
   )
 }
 
+// sections
 function Hero({ detectLocation }: { detectLocation: () => Promise<unknown> }) {
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-gradient-to-br from-[var(--sand)] via-[hsl(36_60%_94%)] to-[var(--cream)] pt-[72px]">
@@ -109,7 +110,6 @@ function Hero({ detectLocation }: { detectLocation: () => Promise<unknown> }) {
           >
             Good food is closer than you think.
           </h1>
-
 
           <form
             onSubmit={(e) => e.preventDefault()}
@@ -154,6 +154,7 @@ function Hero({ detectLocation }: { detectLocation: () => Promise<unknown> }) {
     </section>
   )
 }
+
 function ActiveOrderSection({ onDismiss }: { onDismiss: () => void }) {
   return (
     <section className="px-6 sm:px-10 max-w-7xl mx-auto pt-10">
@@ -187,17 +188,67 @@ function ActiveOrderSection({ onDismiss }: { onDismiss: () => void }) {
     </section>
   )
 }
+
+// Category carousel with previous / next buttons
 function CategoriesSection({ categories, loading }: { categories: FoodCategory[]; loading: boolean }) {
+  const railRef = useRef<HTMLDivElement>(null)
+  const [canPrev, setCanPrev] = useState(false)
+  const [canNext, setCanNext] = useState(false)
+
+  const updateArrows = useCallback(() => {
+    const el = railRef.current
+    if (!el) return
+    setCanPrev(el.scrollLeft > 4)
+    setCanNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 4)
+  }, [])
+
+  useEffect(() => {
+    updateArrows()
+    window.addEventListener('resize', updateArrows)
+    return () => window.removeEventListener('resize', updateArrows)
+  }, [categories, loading, updateArrows])
+
+  const scrollByPage = (dir: 1 | -1) => {
+    const el = railRef.current
+    if (el) el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: 'smooth' })
+  }
+
+  const arrow =
+    'w-10 h-10 rounded-full border border-[var(--line)] bg-white text-[var(--ink)] flex items-center justify-center cursor-pointer transition-colors hover:bg-[var(--ink)] hover:text-white hover:border-[var(--ink)] disabled:opacity-40 disabled:cursor-default disabled:hover:bg-white disabled:hover:text-[var(--ink)] disabled:hover:border-[var(--line)]'
+
   return (
     <section className="py-20 px-6 sm:px-10 max-w-7xl mx-auto" id="explore">
-      <h2 className="mb-8 text-3xl sm:text-4xl font-black tracking-tight text-[var(--ink)]" style={serif}>
-        What are you craving?
-      </h2>
+      <div className="flex items-center justify-between gap-4 mb-8">
+        <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--ink)] m-0" style={serif}>
+          What are you craving?
+        </h2>
 
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 sm:gap-4">
+        <div className="hidden sm:flex gap-2 shrink-0">
+          <button type="button" aria-label="Previous categories" disabled={!canPrev} onClick={() => scrollByPage(-1)} className={arrow}>
+            <ChevronLeft size={20} aria-hidden="true" />
+          </button>
+          <button type="button" aria-label="Next categories" disabled={!canNext} onClick={() => scrollByPage(1)} className={arrow}>
+            <ChevronRight size={20} aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+
+      <div
+        ref={railRef}
+        onScroll={updateArrows}
+        className="flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-6 px-6 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         {loading
-          ? Array.from({ length: 6 }).map((_, i) => <CategorySkeleton key={i} />)
-          : categories.map((category) => <CategoryCard key={category.id} category={category} />)}
+          ? Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="snap-start shrink-0 w-[112px] sm:w-[136px]">
+                <CategorySkeleton />
+              </div>
+            ))
+          : categories.map((category) => (
+              <div key={category.id} className="snap-start shrink-0 w-[112px] sm:w-[136px]">
+                <CategoryCard category={category} href={`/explore?category=${category.id}`} />
+              </div>
+            ))}
       </div>
     </section>
   )
@@ -252,7 +303,7 @@ function HowItWorksSection() {
   )
 }
 
-function PartnerSection({ navigate }: { navigate: (to: Route) => void }) {
+function PartnerSection() {
   return (
     <section className="bg-[var(--red)] py-20 px-6 sm:px-10 relative overflow-hidden" id="partner">
       <div className="absolute top-[-60px] right-[-60px] w-64 h-64 rounded-full bg-white/5 pointer-events-none" />
@@ -266,12 +317,14 @@ function PartnerSection({ navigate }: { navigate: (to: Route) => void }) {
           <p className="text-white/75 text-base leading-relaxed max-w-md mb-8">
             Reach more customers, manage your orders in one place, and grow your business.
           </p>
-          <button
-            onClick={() => navigate('/vendor/register')}
-            className="bg-white text-[var(--red)] font-bold px-7 py-4 rounded-sm border-0 cursor-pointer hover:-translate-y-0.5 transition-transform shadow-[0_8px_24px_hsl(0_0%_0%/0.2)] text-sm"
+          <a
+            href="/vendor/register"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block bg-white text-[var(--red)] font-bold px-7 py-4 rounded-sm no-underline hover:-translate-y-0.5 transition-transform shadow-[0_8px_24px_hsl(0_0%_0%/0.2)] text-sm"
           >
             Become a partner
-          </button>
+          </a>
         </div>
 
         <div className="hidden lg:flex items-center justify-center" aria-hidden="true">
@@ -305,7 +358,7 @@ function AboutSection() {
   )
 }
 
-//main combine homepage
+// main: combine homepage
 export function HomePage({ navigate }: { navigate: (to: Route) => void }) {
   const { coordinates, detectLocation } = useLocationContext()
   const { categories, restaurants, loading, error } = useHomeData(coordinates.latitude, coordinates.longitude)
@@ -315,7 +368,7 @@ export function HomePage({ navigate }: { navigate: (to: Route) => void }) {
   return (
     <main id="top" className="overflow-x-hidden">
       <Hero detectLocation={detectLocation} />
-       {hasToken && !bannerDismissed && <ActiveOrderSection onDismiss={() => setBannerDismissed(true)} />}
+      {hasToken && !bannerDismissed && <ActiveOrderSection onDismiss={() => setBannerDismissed(true)} />}
       {error && (
         <p className="max-w-7xl mx-auto px-6 py-4 text-red-600 font-semibold text-sm" role="alert">
           {error}
@@ -325,7 +378,7 @@ export function HomePage({ navigate }: { navigate: (to: Route) => void }) {
       <CategoriesSection categories={categories} loading={loading} />
       <RestaurantsSection restaurants={restaurants} loading={loading} navigate={navigate} />
       <HowItWorksSection />
-      <PartnerSection navigate={navigate} />
+      <PartnerSection />
       <AboutSection />
     </main>
   )
