@@ -10,23 +10,19 @@ import (
 	"github.com/dineshkadel/backend/internal/services"
 )
 
-// ─── Context key type ──────────────────────────────────────────────────────────
-
 type contextKey string
 
 const (
-	userIDKey            contextKey = "chulo_user_id"
-	emailKey             contextKey = "chulo_user_email"
-	userRoleKey          contextKey = "chulo_user_role"
-	deliveryPersonIDKey  contextKey = "chulo_delivery_person_id"
+	userIDKey           contextKey = "chulo_user_id"
+	emailKey            contextKey = "chulo_user_email"
+	userRoleKey         contextKey = "chulo_user_role"
+	deliveryPersonIDKey contextKey = "chulo_delivery_person_id"
 )
 
 var (
 	ErrUserNotInContext           = errors.New("user not found in request context")
 	ErrDeliveryPersonNotInContext = errors.New("delivery person not found in request context")
 )
-
-// ─── User Auth Middleware ──────────────────────────────────────────────────────
 
 // AuthMiddleware validates a user Bearer token and injects claims into the request context.
 func AuthMiddleware(authService services.AuthService) func(http.Handler) http.Handler {

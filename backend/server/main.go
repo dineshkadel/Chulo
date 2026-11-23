@@ -84,6 +84,10 @@ func main() {
 	adminCustomerService := services.NewAdminCustomerService(adminCustomerRepo)
 	adminCustomerHandler := handlers.NewAdminCustomerHandler(adminCustomerService)
 
+	adminRestaurantRepo := repository.NewAdminRestaurantRepository(db)
+	adminRestaurantService := services.NewAdminRestaurantService(adminRestaurantRepo)
+	adminRestaurantHandler := handlers.NewAdminRestaurantHandler(adminRestaurantService)
+
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -211,6 +215,18 @@ func main() {
 			admin.Patch("/customers/{id}/status", adminCustomerHandler.UpdateCustomerStatus)
 			admin.Patch("/customers/{id}/role", adminCustomerHandler.UpdateCustomerRole)
 			admin.Delete("/customers/{id}", adminCustomerHandler.DeleteCustomer)
+
+			// Restaurants
+			admin.Get("/restaurants", adminRestaurantHandler.ListRestaurants)
+			admin.Post("/restaurants", adminRestaurantHandler.CreateRestaurant)
+			admin.Get("/restaurants/{id}", adminRestaurantHandler.GetRestaurant)
+			admin.Put("/restaurants/{id}", adminRestaurantHandler.UpdateRestaurant)
+			admin.Patch("/restaurants/{id}", adminRestaurantHandler.UpdateRestaurant)
+			admin.Patch("/restaurants/{id}/status", adminRestaurantHandler.UpdateStatus)
+			admin.Delete("/restaurants/{id}", adminRestaurantHandler.DeleteRestaurant)
+			admin.Post("/restaurants/{id}/image", adminRestaurantHandler.UploadImage)
+			admin.Get("/restaurants/{id}/menu-items", adminRestaurantHandler.GetMenuItems)
+			admin.Get("/restaurants/{id}/orders", adminRestaurantHandler.GetOrders)
 
 			// Orders
 			admin.Get("/orders", orderHandler.GetAllOrders)
