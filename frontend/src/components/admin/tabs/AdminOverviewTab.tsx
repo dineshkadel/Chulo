@@ -20,7 +20,7 @@ export function AdminOverviewTab({ onNavigateTab }: AdminOverviewTabProps) {
   const metrics = [
     {
       label: 'Gross Platform Sales',
-      value: 'Rs 1,248,500',
+      value: 'Rs.1,248,500',
       change: '+14.2% vs last week',
       icon: DollarSign,
       color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -98,7 +98,7 @@ export function AdminOverviewTab({ onNavigateTab }: AdminOverviewTabProps) {
               Welcome back to Admin Command
             </h2>
             <p className="mt-1 max-w-xl text-xs text-orange-100/70 sm:text-sm">
-              Live oversight across customers, restaurants, delivery fleet, and orders. All services operating normally with automated Haversine assignment enabled.
+              Live oversight across customers, restaurants, delivery fleet, and orders. All services operating normally with automated proximity dispatch enabled.
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap gap-2.5">
@@ -181,7 +181,7 @@ export function AdminOverviewTab({ onNavigateTab }: AdminOverviewTabProps) {
                     <td className="py-3 font-mono font-bold text-[var(--ink)]">{o.id}</td>
                     <td className="py-3 text-stone-700">{o.customer}</td>
                     <td className="py-3 text-stone-600">{o.restaurant}</td>
-                    <td className="py-3 font-bold text-[var(--ink)]">Rs {o.amount}</td>
+                    <td className="py-3 font-bold text-[var(--ink)]">Rs.{o.amount}</td>
                     <td className="py-3">
                       <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold ${getStatusBadge(o.status)}`}>
                         {o.status}
@@ -200,7 +200,7 @@ export function AdminOverviewTab({ onNavigateTab }: AdminOverviewTabProps) {
           {/* Dispatch health card */}
           <div className="rounded-2xl border border-[#eadfd2] bg-white p-6 shadow-xs">
             <h3 className="m-0 text-base font-bold text-[var(--ink)]">Assignment Engine</h3>
-            <p className="m-0 mt-0.5 text-xs text-stone-500">Haversine dispatch algorithm</p>
+            <p className="m-0 mt-0.5 text-xs text-stone-500">Smart proximity dispatch algorithm</p>
 
             <div className="mt-4 space-y-3">
               <div className="flex items-center justify-between rounded-xl bg-emerald-50 p-3 text-xs text-emerald-800">

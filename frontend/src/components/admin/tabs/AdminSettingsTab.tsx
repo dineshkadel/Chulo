@@ -31,7 +31,7 @@ export function AdminSettingsTab() {
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
-        {/* Haversine & Delivery Fee Computation */}
+        {/* Delivery Fee Computation */}
         <div className="rounded-2xl border border-[#eadfd2] bg-white p-6 shadow-xs">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-100 text-[var(--red)]">
@@ -39,7 +39,7 @@ export function AdminSettingsTab() {
             </span>
             <div>
               <h3 className="m-0 text-base font-bold text-[var(--ink)]">
-                Delivery Pricing & Haversine Formula
+                Delivery Pricing & Distance Settings
               </h3>
               <p className="m-0 text-xs text-stone-500">
                 Formula: Total Fee = Base Fee + (Distance in KM × Per KM Rate)
@@ -50,11 +50,11 @@ export function AdminSettingsTab() {
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
             <div>
               <label className="block text-xs font-bold text-stone-700">
-                Base Delivery Fee (Rs)
+                Base Delivery Fee (Rs.)
               </label>
               <div className="relative mt-1.5">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400">
-                  Rs
+                  Rs.
                 </span>
                 <input
                   type="number"
@@ -68,11 +68,11 @@ export function AdminSettingsTab() {
 
             <div>
               <label className="block text-xs font-bold text-stone-700">
-                Per-Kilometer Distance Rate (Rs/km)
+                Per-Kilometer Distance Rate (Rs./km)
               </label>
               <div className="relative mt-1.5">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400">
-                  Rs
+                  Rs.
                 </span>
                 <input
                   type="number"
@@ -81,7 +81,7 @@ export function AdminSettingsTab() {
                   className="h-10 w-full rounded-xl border border-stone-200 bg-white pl-9 pr-3 text-xs font-bold text-[var(--ink)] focus:border-[var(--red)] focus:outline-none"
                 />
               </div>
-              <p className="mt-1 text-[11px] text-stone-400">Added per kilometer computed via Haversine</p>
+              <p className="mt-1 text-[11px] text-stone-400">Added per kilometer of delivery distance</p>
             </div>
 
             <div>

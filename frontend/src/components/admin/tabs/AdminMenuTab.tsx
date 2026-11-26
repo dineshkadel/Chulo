@@ -153,7 +153,7 @@ export function AdminMenuTab() {
                       {item.category}
                     </span>
                   </td>
-                  <td className="py-3 font-bold text-[var(--red)]">Rs {item.price}</td>
+                  <td className="py-3 font-bold text-[var(--red)]">Rs.{item.price}</td>
                   <td className="py-3">
                     <span
                       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${

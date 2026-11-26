@@ -276,7 +276,7 @@ export function AdminCustomersTab() {
                         {c.orders_count} orders
                       </td>
                       <td className="py-3.5 px-4 font-bold text-[var(--ink)]">
-                        Rs {c.total_spent.toLocaleString()}
+                        Rs.{c.total_spent.toLocaleString()}
                       </td>
                       <td className="py-3.5 px-4 text-stone-500 text-[11px]">{formattedDate}</td>
                       <td className="py-3.5 px-4">
@@ -418,7 +418,7 @@ export function AdminCustomersTab() {
                   <div className="rounded-xl border border-stone-100 bg-stone-50/60 p-3">
                     <span className="text-stone-400">Total Money Spent</span>
                     <p className="mt-1 text-base font-bold text-[var(--red)]">
-                      Rs {customerDetail.total_spent.toLocaleString()}
+                      Rs.{customerDetail.total_spent.toLocaleString()}
                     </p>
                   </div>
                 </div>

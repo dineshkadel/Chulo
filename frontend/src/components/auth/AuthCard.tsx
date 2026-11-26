@@ -231,8 +231,8 @@ type InputFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'id' | 'class
   id: string
   label: ReactNode
   icon: ReactNode
-  labelAside?: ReactNode // small text or link on the right of the label
-  trailing?: ReactNode // e.g. the show/hide password button
+  labelAside?: ReactNode 
+  trailing?: ReactNode 
 }
 
 function InputField({ id, label, icon, labelAside, trailing, ...inputProps }: InputFieldProps) {

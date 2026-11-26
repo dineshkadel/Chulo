@@ -128,7 +128,7 @@ export function AdminOrdersTab() {
                 <th className="py-3.5 px-4">Customer</th>
                 <th className="py-3.5 px-4">Restaurant</th>
                 <th className="py-3.5 px-4">Assigned Rider</th>
-                <th className="py-3.5 px-4">Total (Rs)</th>
+                <th className="py-3.5 px-4">Total (Rs.)</th>
                 <th className="py-3.5 px-4">Status</th>
                 <th className="py-3.5 px-4">Timestamp</th>
                 <th className="py-3.5 px-4 text-right">Admin Actions</th>
@@ -153,9 +153,9 @@ export function AdminOrdersTab() {
                     )}
                   </td>
                   <td className="py-3.5 px-4">
-                    <p className="m-0 font-bold text-[var(--ink)]">Rs {order.total}</p>
+                    <p className="m-0 font-bold text-[var(--ink)]">Rs.{order.total}</p>
                     <p className="m-0 text-[10px] text-stone-400">
-                      Fee: Rs {order.delivery_fee}
+                      Fee: Rs.{order.delivery_fee}
                     </p>
                   </td>
                   <td className="py-3.5 px-4">
