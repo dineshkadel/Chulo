@@ -4,6 +4,7 @@ import { getMenuItems, getRestaurantById } from '../api/restaurants'
 import { useCartContext } from '../contexts/CartContext'
 import { useLocationContext } from '../contexts/LocationContext'
 import type { MenuItem, Restaurant } from '../types/restaurant'
+import { formatCuisines } from '../utils/format'
 
 const serif = { fontFamily: "'Playfair Display', Georgia, serif" }
 
@@ -79,9 +80,11 @@ function PageMessage({ message }: { message: string }) {
 // sections
 /* Banner: photo fills ~40% of the screen, the bottom ~20% holds the details and description */
 function RestaurantBanner({ restaurant, distance }: { restaurant: Restaurant; distance?: number }) {
+  const hasHeroImage = Boolean(restaurant.hero_image_url)
+
   return (
-    <section className="relative min-h-[40vh] flex flex-col justify-between overflow-hidden bg-[var(--ink)] text-white pt-[72px]">
-      {restaurant.hero_image_url ? (
+    <section className={`relative flex min-h-[40vh] flex-col justify-between overflow-hidden ${hasHeroImage ? 'bg-[var(--ink)] text-white' : 'bg-white text-[var(--ink)]'}`}>
+      {hasHeroImage ? (
         <img
           src={restaurant.hero_image_url}
           alt={restaurant.name}
@@ -89,19 +92,18 @@ function RestaurantBanner({ restaurant, distance }: { restaurant: Restaurant; di
           className="absolute inset-0 h-full w-full object-cover"
         />
       ) : (
-        <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-[var(--red)] to-[var(--ink)]" aria-hidden="true">
-          <span className="text-[160px] font-black leading-none text-[var(--gold)]/40" style={serif}>
-            {restaurant.name.slice(0, 1)}
-          </span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center" aria-hidden="true">
+          <span className="text-base font-semibold text-[var(--muted)]">Image not available</span>
+          <span className="text-sm text-stone-400">{restaurant.name}</span>
         </div>
       )}
       {/* keeps the text readable on any photo */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20" />
+      {hasHeroImage && <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20" />}
 
       <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pt-5 sm:px-10">
         <a
           href="/restaurant"
-          className="inline-flex items-center gap-2 rounded-full bg-black/40 px-4 py-2 text-sm font-bold text-white no-underline backdrop-blur-sm hover:bg-black/60 transition-colors"
+          className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold no-underline transition-colors ${hasHeroImage ? 'bg-black/40 text-white backdrop-blur-sm hover:bg-black/60' : 'border border-[var(--line)] bg-white text-[var(--ink)] hover:bg-stone-50'}`}
         >
           <ArrowLeft size={17} aria-hidden="true" /> All restaurants
         </a>
@@ -113,8 +115,8 @@ function RestaurantBanner({ restaurant, distance }: { restaurant: Restaurant; di
           <span className={`rounded-full px-3 py-1 text-xs font-bold ${restaurant.is_open ? 'bg-emerald-600' : 'bg-stone-700'}`}>
             {restaurant.is_open ? 'Open now' : 'Currently closed'}
           </span>
-          <span className="text-sm font-semibold text-white/80">
-            {restaurant.cuisine_types || 'Local food'} · {'₨'.repeat(Math.max(1, restaurant.price_tier))}
+          <span className={`text-sm font-semibold ${hasHeroImage ? 'text-white/80' : 'text-[var(--muted)]'}`}>
+            {formatCuisines(restaurant.cuisine_types) || 'Local food'} · Price tier {restaurant.price_tier}
           </span>
         </div>
 
@@ -122,7 +124,7 @@ function RestaurantBanner({ restaurant, distance }: { restaurant: Restaurant; di
           {restaurant.name}
         </h1>
 
-        <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-white/80">
+        <div className={`flex flex-wrap gap-x-5 gap-y-1 text-sm ${hasHeroImage ? 'text-white/80' : 'text-[var(--muted)]'}`}>
           <span className="inline-flex items-center gap-1">
             <Star size={16} className="fill-[var(--gold)] text-[var(--gold)]" aria-hidden="true" />
             {restaurant.avg_rating ? restaurant.avg_rating.toFixed(1) : 'New'}
@@ -135,7 +137,7 @@ function RestaurantBanner({ restaurant, distance }: { restaurant: Restaurant; di
         </div>
 
         {restaurant.description && (
-          <p className="mb-0 mt-3 max-w-3xl text-sm leading-6 text-white/85 sm:text-base line-clamp-3">
+          <p className={`mb-0 mt-3 max-w-3xl text-sm leading-6 sm:text-base line-clamp-3 ${hasHeroImage ? 'text-white/85' : 'text-[var(--muted)]'}`}>
             {restaurant.description}
           </p>
         )}
@@ -164,7 +166,7 @@ function MenuItemCard({ item, restaurant }: { item: MenuItem; restaurant: Restau
       </a>
 
       <div className="flex items-center justify-between border-t border-[var(--line)] px-4 py-3">
-        <strong className="text-[var(--red)]">₨{item.price.toFixed(0)}</strong>
+        <strong className="text-[var(--red)]">Rs.{item.price.toFixed(0)}</strong>
         <button
           disabled={!item.is_available}
           onClick={() =>
@@ -228,7 +230,7 @@ export function RestaurantDetailPage({ restaurantId }: { restaurantId: number })
       : undefined
 
   return (
-    <main className="min-h-screen bg-[#fffaf4]">
+    <main className="min-h-screen bg-[#fffaf4] pt-[72px]">
       {loading || !restaurant ? <BannerSkeleton /> : <RestaurantBanner restaurant={restaurant} distance={distance} />}
       <MenuSection items={items} restaurant={restaurant} loading={loading} />
     </main>

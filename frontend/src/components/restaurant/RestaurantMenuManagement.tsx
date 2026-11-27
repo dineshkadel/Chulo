@@ -3,7 +3,7 @@ import { Edit3, Plus, RefreshCw, Trash2, UtensilsCrossed, X } from 'lucide-react
 import { createFoodCategory, createMenuItem, deleteMenuItem, getMyFoodCategories, getMyMenuItems, toggleMenuItemAvailability, updateMenuItem, type FoodCategory, type MenuItemPayload } from '../../api/restaurantApi'
 import type { MenuItem } from '../../types/restaurant'
 
-const money = (amount: number) => `Rs ${amount.toLocaleString('en-IN')}`
+const money = (amount: number) => `Rs.${amount.toLocaleString('en-IN')}`
 export function RestaurantMenuManagement() {
   const [items, setItems] = useState<MenuItem[]>([]); const [categories, setCategories] = useState<FoodCategory[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [editing, setEditing] = useState<MenuItem | null | 'new'>(null)
   async function load() { setLoading(true); setError(''); try { const [menu, cats] = await Promise.all([getMyMenuItems(), getMyFoodCategories()]); setItems(menu); setCategories(cats) } catch (err) { setError(err instanceof Error ? err.message : 'Could not load menu') } finally { setLoading(false) } }

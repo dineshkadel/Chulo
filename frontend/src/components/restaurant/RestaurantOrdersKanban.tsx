@@ -779,7 +779,7 @@ function OrderDetailsModal({
               <span>{formatCurrency(order.subtotal)}</span>
             </div>
             <div className="flex justify-between text-stone-600">
-              <span>Delivery Fee (Haversine Distance):</span>
+              <span>Delivery Fee:</span>
               <span>{formatCurrency(order.delivery_fee)}</span>
             </div>
             {order.tax > 0 && (

@@ -76,23 +76,23 @@ function PageMessage({ message, restaurantId }: { message: string; restaurantId:
 // sections
 /* Left half: the dish photo fills the whole panel */
 function ItemImagePanel({ item, restaurantId }: { item: MenuItem; restaurantId: number }) {
+  const hasImage = Boolean(item.image_url)
+
   return (
-    <div className="relative min-h-[40vh] overflow-hidden bg-[var(--ink)] md:min-h-[calc(100vh-72px)]">
-      {item.image_url ? (
+    <div className={`relative min-h-[40vh] overflow-hidden md:min-h-[calc(100vh-72px)] ${hasImage ? 'bg-[var(--ink)]' : 'bg-white'}`}>
+      {hasImage ? (
         <img src={item.image_url} alt={item.name} fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" />
       ) : (
-        // no photo: a plain brand panel instead of a placeholder picture
-        <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-[var(--red)] to-[var(--ink)]" aria-hidden="true">
-          <span className="text-[180px] font-black leading-none text-[var(--gold)]/40" style={serif}>
-            {item.name.slice(0, 1)}
-          </span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center" aria-hidden="true">
+          <span className="text-base font-semibold text-[var(--muted)]">Image not available</span>
+          <span className="text-sm text-stone-400">{item.name}</span>
         </div>
       )}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-transparent to-transparent" />
+      {hasImage && <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-transparent to-transparent" />}
 
       <a
         href={`/restaurant/${restaurantId}`}
-        className="absolute left-5 top-5 inline-flex items-center gap-2 rounded-full bg-black/40 px-4 py-2 text-sm font-bold text-white no-underline backdrop-blur-sm transition-colors hover:bg-black/60 sm:left-8 sm:top-8"
+        className={`absolute left-5 top-5 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold no-underline transition-colors sm:left-8 sm:top-8 ${hasImage ? 'bg-black/40 text-white backdrop-blur-sm hover:bg-black/60' : 'border border-[var(--line)] bg-white text-[var(--ink)] hover:bg-stone-50'}`}
       >
         <ArrowLeft size={17} aria-hidden="true" /> Back to menu
       </a>
@@ -162,7 +162,7 @@ function ItemDetailsPanel({ item, restaurant, restaurantId }: { item: MenuItem; 
         {item.description || 'Freshly prepared to order.'}
       </p>
 
-      <p className="mb-0 mt-8 text-3xl font-black text-[var(--red)]">₨{item.price.toFixed(0)}</p>
+      <p className="mb-0 mt-8 text-3xl font-black text-[var(--red)]">Rs.{item.price.toFixed(0)}</p>
 
       <div className="my-8 h-px bg-[var(--line)]" />
 
@@ -178,7 +178,7 @@ function ItemDetailsPanel({ item, restaurant, restaurantId }: { item: MenuItem; 
               {added ? <Check size={18} aria-hidden="true" /> : <Plus size={18} aria-hidden="true" />}
               {added ? 'Added to cart' : 'Add to cart'}
             </span>
-            <span>₨{(item.price * quantity).toFixed(0)}</span>
+            <span>Rs.{(item.price * quantity).toFixed(0)}</span>
           </button>
         </>
       ) : (

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { Bike, ChevronLeft, ChevronRight, MapPin, Soup, Store } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { ArrowRight, Bike, ChevronLeft, ChevronRight, MapPin, Search, Store } from 'lucide-react'
 import type { Route } from '../App'
 import { getCategories, getRestaurants } from '../api/restaurants'
 import type { FoodCategory, Restaurant } from '../types/restaurant'
@@ -7,42 +7,19 @@ import { CategoryCard } from '../components/restaurant/CategoryCard'
 import { RestaurantCard } from '../components/restaurant/RestaurantCard'
 import { useLocationContext } from '../contexts/LocationContext'
 
-const serif = { fontFamily: "'Playfair Display', Georgia, serif" }
+// Foodmandu-style tokens: white surfaces, one strong orange, soft grey lines, rounded cards.
+// Scoped on <main> so nothing else in the app is affected.
+const theme = {
+  '--brand': '#f26b1d',
+  '--brand-dark': '#d85a10',
+  '--brand-soft': '#fff1e8',
+  '--ink': '#222222',
+  '--muted': '#6b7280',
+  '--line': '#ececec',
+  '--bg': '#ffffff',
+  '--panel': '#fafafa',
+} as React.CSSProperties
 
-// data
-const steps: { title: string; desc: string; icon: ReactNode }[] = [
-  {
-    title: 'Choose your food',
-    desc: 'Browse restaurants and dishes, then place your order in a few taps.',
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
-        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-      </svg>
-    ),
-  },
-  {
-    title: 'The kitchen gets cooking',
-    desc: 'The restaurant starts preparing your meal as soon as your order comes in.',
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-      </svg>
-    ),
-  },
-  {
-    title: 'It arrives at your door',
-    desc: 'A rider picks it up and brings it straight to you while it is still hot.',
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="10" />
-        <polyline points="12 6 12 12 16 14" />
-      </svg>
-    ),
-  },
-]
-
-// data loading
 function useHomeData(latitude: number, longitude: number) {
   const [categories, setCategories] = useState<FoodCategory[]>([])
   const [restaurants, setRestaurants] = useState<Restaurant[]>([])
@@ -75,8 +52,8 @@ function useHomeData(latitude: number, longitude: number) {
 // skeletons
 function CategorySkeleton() {
   return (
-    <div className="flex flex-col items-center gap-3 p-5 rounded-2xl border border-[var(--line)] bg-white animate-pulse">
-      <div className="w-14 h-14 rounded-full bg-[var(--line)]" />
+    <div className="flex flex-col items-center gap-2 animate-pulse">
+      <div className="w-20 h-20 rounded-full bg-[var(--line)]" />
       <div className="w-12 h-3 rounded bg-[var(--line)]" />
     </div>
   )
@@ -84,71 +61,59 @@ function CategorySkeleton() {
 
 function RestaurantSkeleton() {
   return (
-    <div className="rounded-2xl border border-[var(--line)] bg-white overflow-hidden animate-pulse">
-      <div className="h-[180px] bg-[var(--line)]" />
+    <div className="rounded-xl border border-[var(--line)] bg-white overflow-hidden animate-pulse">
+      <div className="h-[160px] bg-[var(--line)]" />
       <div className="p-4 space-y-3">
         <div className="h-4 rounded bg-[var(--line)] w-3/4" />
         <div className="h-3 rounded bg-[var(--line)] w-1/2" />
-        <div className="h-3 rounded bg-[var(--line)] w-1/3" />
       </div>
     </div>
   )
 }
 
 // sections
-function Hero({ detectLocation }: { detectLocation: () => Promise<unknown> }) {
+const HERO_IMAGE =
+  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=2000&q=80'
+
+function Hero() {
+  const [query, setQuery] = useState('')
+
   return (
-    <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-gradient-to-br from-[var(--sand)] via-[hsl(36_60%_94%)] to-[var(--cream)] pt-[72px]">
-      <div className="absolute top-[10%] right-[5%] w-[500px] h-[500px] rounded-full bg-[var(--gold)]/10 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-[15%] w-[300px] h-[300px] rounded-full bg-[var(--red)]/8 blur-2xl pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto px-6 sm:px-10 w-full grid lg:grid-cols-2 gap-12 lg:gap-6 items-center py-16 lg:py-24">
-        <div className="relative z-10">
-          <h1
-            className="font-black leading-[0.95] tracking-tight mb-6 text-[var(--ink)]"
-            style={{ ...serif, fontSize: 'clamp(48px, 6vw, 80px)' }}
-          >
-            Good food is closer than you think.
+    <section className="bg-white pt-[72px]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 grid lg:grid-cols-2 gap-8 lg:gap-12 items-center min-h-[calc(85vh-72px)] py-8">
+        <div className="order-2 lg:order-1">
+          <h1 className="font-extrabold leading-[1.05] tracking-tight text-[var(--ink)] m-0" style={{ fontSize: 'clamp(40px, 5.5vw, 72px)' }}>
+            Good food, delivered fast.
           </h1>
-
+          <p className="text-[var(--muted)] text-base sm:text-lg mt-5 mb-8 max-w-md">
+            Order from your favourite local restaurants and track your rider to your door.
+          </p>
           <form
-            onSubmit={(e) => e.preventDefault()}
-            className="flex items-center bg-white rounded-md shadow-[0_8px_32px_hsl(36_20%_20%/0.12)] max-w-[480px] overflow-hidden border border-[var(--line)]"
+            onSubmit={(e) => {
+              e.preventDefault()
+              const q = query.trim()
+              window.location.assign(q ? `/explore?q=${encodeURIComponent(q)}` : '/explore')
+            }}
+            className="flex items-center bg-white rounded-full border border-[var(--line)] shadow-[0_8px_30px_rgba(0,0,0,0.08)] max-w-[520px] overflow-hidden"
           >
-            <span className="pl-4 text-[var(--muted)]">
-              <MapPin size={20} aria-hidden="true" />
+            <span className="pl-5 text-[var(--brand)]">
+              <Search size={20} aria-hidden="true" />
             </span>
             <input
-              aria-label="Delivery address"
-              placeholder="Enter your delivery address"
-              className="flex-1 h-14 border-0 outline-none bg-transparent px-3 text-sm text-[var(--ink)]"
+              aria-label="Search dishes or restaurants"
+              placeholder="Search dishes or restaurants"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="flex-1 min-w-0 h-14 border-0 outline-none bg-transparent px-3 text-sm text-[var(--ink)]"
             />
-            <button
-              aria-label="Find food near this address"
-              className="h-14 px-5 bg-[var(--red)] text-white font-bold text-sm border-0 cursor-pointer hover:bg-[hsl(14_75%_40%)] transition-colors"
-            >
+            <button className="h-14 px-7 bg-[var(--brand)] hover:bg-[var(--brand-dark)] text-white font-bold text-sm border-0 cursor-pointer transition-colors">
               Find food
             </button>
           </form>
-
-          <button onClick={() => void detectLocation()} className="mt-4 flex items-center gap-2 text-xs font-semibold text-[var(--muted)] hover:text-[var(--red)] transition-colors bg-transparent border-0 cursor-pointer p-0">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            Use my current location
-          </button>
         </div>
 
-        {/* Decorative illustration */}
-        <div className="relative hidden lg:flex items-center justify-center min-h-[420px]" aria-hidden="true">
-          <div className="absolute w-72 h-72 rounded-full bg-[var(--gold)]/25 top-0 right-12" />
-          <div
-            className="absolute bottom-0 left-0 right-0 h-48 bg-[var(--red)]"
-            style={{ clipPath: 'polygon(0 100%,18% 20%,35% 70%,52% 0%,70% 65%,86% 22%,100% 100%)' }}
-          />
-          <div className="relative z-10 w-52 h-52 rounded-full bg-[var(--sand)] border-8 border-white shadow-[0_20px_60px_hsl(14_75%_30%/0.25)] flex items-center justify-center">
-            <Soup size={96} strokeWidth={1.5} className="text-[var(--red)]" />
-          </div>
+        <div className="order-1 lg:order-2 relative h-[280px] sm:h-[380px] lg:h-[calc(85vh-72px-64px)] min-h-[280px] rounded-3xl overflow-hidden bg-[var(--brand-soft)]">
+          <img src={HERO_IMAGE} alt="A table of freshly prepared dishes" className="absolute inset-0 w-full h-full object-cover" fetchPriority="high" />
         </div>
       </div>
     </section>
@@ -157,30 +122,22 @@ function Hero({ detectLocation }: { detectLocation: () => Promise<unknown> }) {
 
 function ActiveOrderSection({ onDismiss }: { onDismiss: () => void }) {
   return (
-    <section className="px-6 sm:px-10 max-w-7xl mx-auto pt-10">
-      <div className="flex items-center justify-between gap-4 rounded-2xl border border-[var(--line)] bg-white px-5 py-4 shadow-[0_4px_20px_hsl(36_20%_20%/0.06)]">
-        <div className="flex items-center gap-4 min-w-0">
-          <span className="w-11 h-11 rounded-xl bg-[var(--red)]/10 text-[var(--red)] flex items-center justify-center shrink-0">
-            <Bike size={22} aria-hidden="true" />
+    <section className="max-w-7xl mx-auto px-4 sm:px-8 pt-6">
+      <div className="flex items-center justify-between gap-4 rounded-xl border border-[var(--brand)]/30 bg-[var(--brand-soft)] px-4 py-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="w-10 h-10 rounded-full bg-[var(--brand)] text-white flex items-center justify-center shrink-0">
+            <Bike size={20} aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <p className="font-bold text-sm text-[var(--ink)] m-0">You have an order on the way</p>
+            <p className="font-bold text-sm text-[var(--ink)] m-0">Your order is on the way</p>
             <p className="text-xs text-[var(--muted)] m-0">See where your rider is right now.</p>
           </div>
         </div>
-
         <div className="flex items-center gap-3 shrink-0">
-          <a
-            href="#"
-            className="bg-[var(--red)] text-white text-xs font-bold px-4 py-2.5 rounded-lg no-underline hover:bg-[hsl(14_75%_40%)] transition-colors"
-          >
+          <a href="#" className="bg-[var(--brand)] text-white text-xs font-bold px-4 py-2 rounded-lg no-underline hover:bg-[var(--brand-dark)] transition-colors">
             Track order
           </a>
-          <button
-            onClick={onDismiss}
-            className="bg-transparent border-0 cursor-pointer text-[var(--muted)] hover:text-[var(--ink)] text-xl leading-none"
-            aria-label="Dismiss"
-          >
+          <button onClick={onDismiss} className="bg-transparent border-0 cursor-pointer text-[var(--muted)] hover:text-[var(--ink)] text-xl leading-none" aria-label="Dismiss">
             ×
           </button>
         </div>
@@ -189,7 +146,6 @@ function ActiveOrderSection({ onDismiss }: { onDismiss: () => void }) {
   )
 }
 
-// Category carousel with previous / next buttons
 function CategoriesSection({ categories, loading }: { categories: FoodCategory[]; loading: boolean }) {
   const railRef = useRef<HTMLDivElement>(null)
   const [canPrev, setCanPrev] = useState(false)
@@ -214,21 +170,18 @@ function CategoriesSection({ categories, loading }: { categories: FoodCategory[]
   }
 
   const arrow =
-    'w-10 h-10 rounded-full border border-[var(--line)] bg-white text-[var(--ink)] flex items-center justify-center cursor-pointer transition-colors hover:bg-[var(--ink)] hover:text-white hover:border-[var(--ink)] disabled:opacity-40 disabled:cursor-default disabled:hover:bg-white disabled:hover:text-[var(--ink)] disabled:hover:border-[var(--line)]'
+    'w-9 h-9 rounded-full border border-[var(--line)] bg-white text-[var(--ink)] flex items-center justify-center cursor-pointer transition-colors hover:bg-[var(--brand)] hover:text-white hover:border-[var(--brand)] disabled:opacity-40 disabled:cursor-default disabled:hover:bg-white disabled:hover:text-[var(--ink)] disabled:hover:border-[var(--line)]'
 
   return (
-    <section className="py-20 px-6 sm:px-10 max-w-7xl mx-auto" id="explore">
-      <div className="flex items-center justify-between gap-4 mb-8">
-        <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--ink)] m-0" style={serif}>
-          What are you craving?
-        </h2>
-
+    <section className="max-w-7xl mx-auto px-4 sm:px-8 pt-10" id="explore">
+      <div className="flex items-center justify-between gap-4 mb-5">
+        <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--ink)] m-0">What are you craving?</h2>
         <div className="hidden sm:flex gap-2 shrink-0">
           <button type="button" aria-label="Previous categories" disabled={!canPrev} onClick={() => scrollByPage(-1)} className={arrow}>
-            <ChevronLeft size={20} aria-hidden="true" />
+            <ChevronLeft size={18} aria-hidden="true" />
           </button>
           <button type="button" aria-label="Next categories" disabled={!canNext} onClick={() => scrollByPage(1)} className={arrow}>
-            <ChevronRight size={20} aria-hidden="true" />
+            <ChevronRight size={18} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -236,129 +189,133 @@ function CategoriesSection({ categories, loading }: { categories: FoodCategory[]
       <div
         ref={railRef}
         onScroll={updateArrows}
-        className="flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-6 px-6 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {loading
           ? Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="snap-start shrink-0 w-[112px] sm:w-[136px]">
-                <CategorySkeleton />
-              </div>
-            ))
+            <div key={i} className="snap-start shrink-0 w-[96px] sm:w-[112px]">
+              <CategorySkeleton />
+            </div>
+          ))
           : categories.map((category) => (
-              <div key={category.id} className="snap-start shrink-0 w-[112px] sm:w-[136px]">
-                <CategoryCard category={category} href={`/explore?category=${category.id}`} />
-              </div>
-            ))}
+            <div key={category.id} className="snap-start shrink-0 w-[96px] sm:w-[112px]">
+              <CategoryCard category={category} href={`/explore?category=${category.id}`} />
+            </div>
+          ))}
       </div>
     </section>
   )
 }
 
-function RestaurantsSection({ restaurants, loading, navigate }: { restaurants: Restaurant[]; loading: boolean; navigate: (to: Route) => void }) {
+function RestaurantsSection({
+  restaurants,
+  loading,
+  navigate,
+  detectLocation,
+}: {
+  restaurants: Restaurant[]
+  loading: boolean
+  navigate: (to: Route) => void
+  detectLocation: () => Promise<unknown>
+}) {
   return (
-    <section className="py-20 px-6 sm:px-10 max-w-7xl mx-auto" id="restaurants">
-      <div className="flex items-end justify-between mb-8 gap-4">
-        <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--ink)]" style={serif}>
+    <section className="max-w-7xl mx-auto px-4 sm:px-8 pt-12" id="restaurants">
+      <div className="flex items-center justify-between mb-5 gap-4">
+        <button
+          type="button"
+          onClick={() => void detectLocation()}
+          aria-label="Restaurants near you: use my current location"
+          className="group flex items-center gap-2 text-xl sm:text-2xl font-extrabold text-[var(--ink)] hover:text-[var(--brand)] bg-transparent border-0 cursor-pointer p-0 transition-colors"
+        >
           Restaurants near you
-        </h2>
-        <button onClick={() => navigate('/restaurant')} className="text-sm font-bold text-[var(--red)] no-underline hover:underline whitespace-nowrap shrink-0 border-0 bg-transparent cursor-pointer">
+          <MapPin size={22} className="text-[var(--brand)]" aria-hidden="true" />
+        </button>
+        <button
+          onClick={() => navigate('/restaurant')}
+          className="text-sm font-bold text-[var(--brand)] hover:underline whitespace-nowrap shrink-0 border-0 bg-transparent cursor-pointer"
+        >
           See all
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {loading
-          ? Array.from({ length: 6 }).map((_, i) => <RestaurantSkeleton key={i} />)
-          : restaurants.slice(0, 6).map((restaurant) => <RestaurantCard key={restaurant.id} restaurant={restaurant} />)}
+          ? Array.from({ length: 8 }).map((_, i) => <RestaurantSkeleton key={i} />)
+          : restaurants.slice(0, 8).map((restaurant) => <RestaurantCard key={restaurant.id} restaurant={restaurant} />)}
       </div>
     </section>
   )
 }
 
 function HowItWorksSection() {
+  const steps = [
+    { title: 'Choose your food', desc: 'Browse restaurants and dishes, then order in a few taps.' },
+    { title: 'The kitchen gets cooking', desc: 'The restaurant starts preparing as soon as your order arrives.' },
+    { title: 'It arrives at your door', desc: 'A rider brings it straight to you while it is still hot.' },
+  ]
   return (
-    <section className="py-20 bg-[var(--sand)]">
-      <div className="max-w-7xl mx-auto px-6 sm:px-10">
-        <h2 className="text-center mb-14 text-3xl sm:text-4xl font-black tracking-tight text-[var(--ink)]" style={serif}>
-          How Chulo works
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {steps.map((step, i) => (
-            <div key={step.title} className="relative flex flex-col items-center text-center">
-              {i < steps.length - 1 && (
-                <div className="hidden md:block absolute top-10 left-[calc(50%+48px)] right-0 h-px border-t-2 border-dashed border-[var(--gold)]/40" />
-              )}
-              <div className="w-20 h-20 rounded-2xl bg-white border border-[var(--line)] flex items-center justify-center text-[var(--red)] shadow-[0_4px_20px_hsl(36_20%_20%/0.08)] mb-5">
-                {step.icon}
-              </div>
-              <span className="text-sm font-bold text-[var(--muted)] mb-2">Step {i + 1}</span>
-              <h3 className="font-bold text-[var(--ink)] text-lg mb-2">{step.title}</h3>
-              <p className="text-sm text-[var(--muted)] leading-relaxed max-w-[260px]">{step.desc}</p>
+    <section className="max-w-7xl mx-auto px-4 sm:px-8 pt-14">
+      <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--ink)] mb-6 m-0">How Chulo works</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {steps.map((s, i) => (
+          <div key={s.title} className="flex gap-4 items-start rounded-xl bg-[var(--panel)] border border-[var(--line)] p-5">
+            <span className="w-9 h-9 rounded-full bg-[var(--brand)] text-white font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+            <div>
+              <h3 className="font-bold text-[var(--ink)] text-base m-0 mb-1">{s.title}</h3>
+              <p className="text-sm text-[var(--muted)] leading-relaxed m-0">{s.desc}</p>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </section>
   )
 }
 
 function PartnerSection() {
+  const cards = [
+    {
+      title: 'Become a delivery partner',
+      desc: 'Ride when you want, deliver in your area, and earn on every order.',
+      cta: 'Start delivering',
+      href: '/rider/register',
+      icon: Bike,
+    },
+    {
+      title: 'Own a restaurant?',
+      desc: 'Reach more customers, manage orders in one place, and grow your business.',
+      cta: 'Become a partner',
+      href: '/vendor/register',
+      icon: Store,
+    },
+  ]
   return (
-    <section className="bg-[var(--red)] py-20 px-6 sm:px-10 relative overflow-hidden" id="partner">
-      <div className="absolute top-[-60px] right-[-60px] w-64 h-64 rounded-full bg-white/5 pointer-events-none" />
-      <div className="absolute bottom-[-80px] left-[10%] w-80 h-80 rounded-full bg-black/10 pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 items-center relative z-10">
-        <div>
-          <h2 className="text-4xl sm:text-5xl font-black text-white mb-5 leading-tight" style={serif}>
-            Own a restaurant? Sell on Chulo.
-          </h2>
-          <p className="text-white/75 text-base leading-relaxed max-w-md mb-8">
-            Reach more customers, manage your orders in one place, and grow your business.
-          </p>
+    <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16" id="partner">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {cards.map(({ title, desc, cta, href, icon: Icon }) => (
           <a
-            href="/vendor/register"
+            key={title}
+            href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block bg-white text-[var(--red)] font-bold px-7 py-4 rounded-sm no-underline hover:-translate-y-0.5 transition-transform shadow-[0_8px_24px_hsl(0_0%_0%/0.2)] text-sm"
+            className="group relative overflow-hidden rounded-3xl bg-[var(--panel)] border border-[var(--line)] p-8 sm:p-10 min-h-[260px] flex flex-col justify-between no-underline text-[var(--ink)] hover:border-[var(--brand)] transition-colors"
           >
-            Become a partner
+            <Icon size={120} strokeWidth={1.2} className="absolute -right-4 -bottom-4 text-[var(--brand)]/10" aria-hidden="true" />
+            <div className="relative max-w-xs">
+              <h2 className="text-2xl sm:text-3xl font-extrabold leading-tight m-0 mb-3">{title}</h2>
+              <p className="text-sm text-[var(--muted)] leading-relaxed m-0">{desc}</p>
+            </div>
+            <span className="relative mt-8 inline-flex items-center gap-2 self-start rounded-full bg-[var(--ink)] group-hover:bg-[var(--brand)] text-white text-sm font-bold px-5 py-3 transition-colors">
+              {cta}
+              <ArrowRight size={16} aria-hidden="true" />
+            </span>
           </a>
-        </div>
-
-        <div className="hidden lg:flex items-center justify-center" aria-hidden="true">
-          <div className="w-56 h-56 border-[3px] border-[var(--gold)] flex items-center justify-center">
-            <Store size={72} strokeWidth={1.5} className="text-[var(--gold)]" />
-          </div>
-        </div>
+        ))}
       </div>
     </section>
   )
 }
 
-function AboutSection() {
-  return (
-    <section className="py-20 px-6 sm:px-10 bg-[var(--ink)] text-white" id="story">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-        <h2 className="text-3xl sm:text-4xl font-black leading-tight" style={serif}>
-          Made to help you enjoy local food.
-        </h2>
-
-        <div>
-          <p className="text-white/70 leading-relaxed text-base mb-4">
-            Chulo makes it easy to find a favourite, try something new, and support the local restaurants around you.
-          </p>
-          <a href="#" className="inline-flex items-center gap-2 text-sm font-bold text-[var(--gold)] no-underline hover:underline">
-            Read our story
-          </a>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-// main: combine homepage
+// main
 export function HomePage({ navigate }: { navigate: (to: Route) => void }) {
   const { coordinates, detectLocation } = useLocationContext()
   const { categories, restaurants, loading, error } = useHomeData(coordinates.latitude, coordinates.longitude)
@@ -366,20 +323,18 @@ export function HomePage({ navigate }: { navigate: (to: Route) => void }) {
   const hasToken = Boolean(localStorage.getItem('token'))
 
   return (
-    <main id="top" className="overflow-x-hidden">
-      <Hero detectLocation={detectLocation} />
+    <main id="top" className="overflow-x-hidden bg-[var(--bg)] text-[var(--ink)]" style={theme}>
+      <Hero />
       {hasToken && !bannerDismissed && <ActiveOrderSection onDismiss={() => setBannerDismissed(true)} />}
       {error && (
-        <p className="max-w-7xl mx-auto px-6 py-4 text-red-600 font-semibold text-sm" role="alert">
+        <p className="max-w-7xl mx-auto px-4 sm:px-8 pt-4 text-red-600 font-semibold text-sm" role="alert">
           {error}
         </p>
       )}
-
       <CategoriesSection categories={categories} loading={loading} />
-      <RestaurantsSection restaurants={restaurants} loading={loading} navigate={navigate} />
+      <RestaurantsSection restaurants={restaurants} loading={loading} navigate={navigate} detectLocation={detectLocation} />
       <HowItWorksSection />
       <PartnerSection />
-      <AboutSection />
     </main>
   )
 }

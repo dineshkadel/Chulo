@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from 'react'
 import { STORAGE_KEYS } from '../utils/constants'
 import type { OrderItem } from '../types/order'
 
@@ -7,11 +7,21 @@ export interface CartItem extends OrderItem {
   restaurantName?: string
 }
 
+export interface RestaurantCartGroup {
+  restaurantId: number
+  restaurantName: string
+  items: CartItem[]
+  subtotal: number
+  totalItems: number
+}
+
 interface CartContextType {
   items: CartItem[]
+  restaurantGroups: RestaurantCartGroup[]
   addItem: (item: CartItem) => void
   removeItem: (menuItemId: number) => void
   updateQuantity: (menuItemId: number, quantity: number) => void
+  clearRestaurant: (restaurantId: number) => void
   clearCart: () => void
   totalItems: number
   totalAmount: number
@@ -38,18 +48,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const restaurantId = items.length > 0 ? items[0].restaurantId : null
 
+  // Allow items from multiple restaurants to coexist in the cart
   const addItem = (item: CartItem) => {
     setItems((prev) => {
-      // If item from different restaurant, user can confirm replace or reset cart
-      if (prev.length > 0 && prev[0].restaurantId !== item.restaurantId) {
-        return [item]
-      }
       const existingIndex = prev.findIndex((i) => i.menu_item_id === item.menu_item_id)
       if (existingIndex > -1) {
         const next = [...prev]
         next[existingIndex] = {
           ...next[existingIndex],
           quantity: next[existingIndex].quantity + item.quantity,
+          restaurantName: item.restaurantName || next[existingIndex].restaurantName,
         }
         return next
       }
@@ -71,9 +79,38 @@ export function CartProvider({ children }: { children: ReactNode }) {
     )
   }
 
+  const clearRestaurant = (targetRestaurantId: number) => {
+    setItems((prev) => prev.filter((i) => i.restaurantId !== targetRestaurantId))
+  }
+
   const clearCart = () => {
     setItems([])
   }
+
+  // Group items by restaurant for Foodmandu/DoorDash-style multi-restaurant orders
+  const restaurantGroups = useMemo<RestaurantCartGroup[]>(() => {
+    const map = new Map<number, RestaurantCartGroup>()
+    for (const item of items) {
+      const existing = map.get(item.restaurantId)
+      if (existing) {
+        existing.items.push(item)
+        existing.subtotal += item.price * item.quantity
+        existing.totalItems += item.quantity
+        if (!existing.restaurantName && item.restaurantName) {
+          existing.restaurantName = item.restaurantName
+        }
+      } else {
+        map.set(item.restaurantId, {
+          restaurantId: item.restaurantId,
+          restaurantName: item.restaurantName || `Restaurant #${item.restaurantId}`,
+          items: [item],
+          subtotal: item.price * item.quantity,
+          totalItems: item.quantity,
+        })
+      }
+    }
+    return Array.from(map.values())
+  }, [items])
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
   const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -82,9 +119,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     <CartContext.Provider
       value={{
         items,
+        restaurantGroups,
         addItem,
         removeItem,
         updateQuantity,
+        clearRestaurant,
         clearCart,
         totalItems,
         totalAmount,
@@ -103,4 +142,3 @@ export function useCartContext(): CartContextType {
   }
   return context
 }
-

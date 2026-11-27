@@ -1,4 +1,5 @@
 import type { Restaurant } from '../../types/restaurant'
+import { formatCuisines } from '../../utils/format'
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -37,18 +38,7 @@ function PriceTier({ tier }: { tier: number }) {
   )
 }
 
-// Gradient placeholder colours per first letter
-const gradients = [
-  'from-orange-400 to-red-500',
-  'from-amber-400 to-orange-500',
-  'from-red-400 to-pink-500',
-  'from-yellow-400 to-amber-500',
-  'from-rose-400 to-red-600',
-]
-
 export function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
-  const gradientIndex = restaurant.name.charCodeAt(0) % gradients.length
-
   return (
     <a href={`/restaurant/${restaurant.id}`} className="group bg-white rounded-2xl border border-[var(--line)] overflow-hidden shadow-sm hover:shadow-xl hover:border-[var(--gold)]/50 transition-all duration-300 hover:scale-[1.02] flex flex-col cursor-pointer no-underline">
       {/* Image / Hero area */}
@@ -62,14 +52,10 @@ export function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
           />
         ) : (
           <div
-            className={`w-full h-full bg-gradient-to-br ${gradients[gradientIndex]} flex items-center justify-center`}
+            className="flex h-full w-full flex-col items-center justify-center gap-1 bg-white px-4 text-center"
           >
-            <span
-              className="font-black text-6xl text-white/30 select-none"
-              style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
-            >
-              {restaurant.name.slice(0, 1)}
-            </span>
+            <span className="text-sm font-semibold text-[var(--muted)]">Image not available</span>
+            <span className="line-clamp-1 text-xs text-stone-400">{restaurant.name}</span>
           </div>
         )}
 
@@ -107,7 +93,7 @@ export function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
 
           {/* Cuisine tags */}
           <p className="text-xs font-medium text-[var(--muted)] m-0 line-clamp-1">
-            {restaurant.cuisine_types || 'Multi-cuisine, Local'}
+            {formatCuisines(restaurant.cuisine_types) || 'Multi-cuisine, Local'}
           </p>
         </div>
 
